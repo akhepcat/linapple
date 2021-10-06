@@ -206,7 +206,7 @@ typedef struct tagPOINT {
     strcat, strcpy and strdup, respectively. */
 
 #define _tcscat     strcat
-#define _tcscpy     strcpy
+#define _tcscpy     _l_strcpy
 #define _tcsdup     strdup
 
 #define _tcslen     strlen

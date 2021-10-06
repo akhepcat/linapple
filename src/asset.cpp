@@ -144,12 +144,12 @@ int Asset_FindMasterDisk(char *path_out)
     paths[i] = (char *)SDL_malloc(sizeof(char[PATH_MAX+1]));
 
   // Define search paths in precedence order.
-  strcpy(paths[0], ".");
-  strcpy(paths[1], "share/linapple"); // testing convenience
-  strcpy(paths[2], SDL_getenv("HOME"));
+  _l_strcpy(paths[0], ".");
+  _l_strcpy(paths[1], "share/linapple"); // testing convenience
+  _l_strcpy(paths[2], SDL_getenv("HOME"));
   strcat(paths[2], "/.local/share/linapple");
-  strcpy(paths[3], "/usr/local/share/linapple");
-  strcpy(paths[4], "/usr/share/linapple");
+  _l_strcpy(paths[3], "/usr/local/share/linapple");
+  _l_strcpy(paths[4], "/usr/share/linapple");
 
   for (auto p: paths) {
     sprintf(path, "%s/%s", p, ASSET_MASTER_DSK);
@@ -157,7 +157,7 @@ int Asset_FindMasterDisk(char *path_out)
     FILE *fp = fopen(path, "r");
     if (fp) {
       fclose(fp);
-      strcpy(path_out, path);
+      _l_strcpy(path_out, path);
       err = 0;
       break;
     }

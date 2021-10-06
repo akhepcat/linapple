@@ -179,7 +179,7 @@ void RegSaveKeyValue(char *NKey, char *NValue) {
   bool found = false;
 
   while(fgets(line, BUFSIZE, registry)) {
-    strcpy(templine, line);
+    _l_strcpy(templine, line);
     if(ReturnKeyValue(templine, &sztmp, &NValue) && !(strcmp(sztmp, NKey)))
     {
       fputs(MyStr, tempf);

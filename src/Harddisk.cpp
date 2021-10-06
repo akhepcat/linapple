@@ -367,7 +367,7 @@ void HD_FTP_Select(int nDrive)
     }
   }
   // we chose some file
-  strcpy(g_sFTPServerHDD, fullPath.c_str());
+  _l_strcpy(g_sFTPServerHDD, fullPath.c_str());
   RegSaveString(TEXT("Preferences"), REGVALUE_FTP_HDD_DIR, 1, g_sFTPServerHDD);// save it
 
   fullPath += "/" + filename;
@@ -432,7 +432,7 @@ void HD_Select(int nDrive)
     }
   }
   // we chose some file
-  strcpy(g_sHDDDir, fullPath.c_str());
+  _l_strcpy(g_sHDDDir, fullPath.c_str());
   RegSaveString(TEXT("Preferences"), REGVALUE_PREF_HDD_START_DIR, 1, g_sHDDDir); // Save it
 
   fullPath += "/" + filename;

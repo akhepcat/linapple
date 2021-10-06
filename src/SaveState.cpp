@@ -43,9 +43,9 @@ char *Snapshot_GetFilename() {
 
 void Snapshot_SetFilename(const char *pszFilename) {
   if (*pszFilename)
-    strcpy(g_szSaveStateFilename, (const char *) pszFilename);
+    _l_strcpy(g_szSaveStateFilename, (const char *) pszFilename);
   else
-    strcpy(g_szSaveStateFilename, DEFAULT_SNAPSHOT_NAME);
+    _l_strcpy(g_szSaveStateFilename, DEFAULT_SNAPSHOT_NAME);
 }
 
 void Snapshot_LoadState() {
@@ -62,8 +62,8 @@ void Snapshot_LoadState() {
     HANDLE hFile = (FILE *) fopen(g_szSaveStateFilename, "rb");
 
     if (hFile == INVALID_HANDLE_VALUE) {
-      strcpy(szMessage, "File not found: ");
-      strcpy(szMessage + strlen(szMessage), g_szSaveStateFilename);
+      _l_strcpy(szMessage, "File not found: ");
+      _l_strcpy(szMessage + strlen(szMessage), g_szSaveStateFilename);
       throw (0);
     }
 
@@ -74,18 +74,18 @@ void Snapshot_LoadState() {
 
     if (!bRes || (dwBytesRead != sizeof(APPLEWIN_SNAPSHOT))) {
       // File size wrong: probably because of version mismatch or corrupt file
-      strcpy(szMessage, "File size mismatch");
+      _l_strcpy(szMessage, "File size mismatch");
       throw (0);
     }
 
     if (pSS->Hdr.dwTag != (unsigned int) AW_SS_TAG) {
-      strcpy(szMessage, "File corrupt");
+      _l_strcpy(szMessage, "File corrupt");
       throw (0);
     }
 
     /* Let it be any version, never mind it! ^_^ */
     if (pSS->Hdr.dwVersion != MAKE_VERSION(1, 0, 0, 1)) {
-      strcpy(szMessage, "Version mismatch");
+      _l_strcpy(szMessage, "Version mismatch");
       throw (0);
     }
 

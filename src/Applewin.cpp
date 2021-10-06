@@ -751,16 +751,16 @@ void LoadConfiguration()
   }
 
   if (szFilename) {
-    strcpy(g_sCurrentDir, szFilename);
+    _l_strcpy(g_sCurrentDir, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
   if (strlen(g_sCurrentDir) == 0 || g_sCurrentDir[0] != '/') {
     char *tmp = getenv("HOME"); /* we don't have HOME?  ^_^  0_0  $_$  */
     if (tmp == NULL) {
-      strcpy(g_sCurrentDir, "/");  //begin from the root, then
+      _l_strcpy(g_sCurrentDir, "/");  //begin from the root, then
     } else {
-      strcpy(g_sCurrentDir, tmp);
+      _l_strcpy(g_sCurrentDir, tmp);
     }
   }
 
@@ -770,7 +770,7 @@ void LoadConfiguration()
   }
 
   if (szFilename) {
-    strcpy(g_sHDDDir, szFilename);
+    _l_strcpy(g_sHDDDir, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
@@ -778,9 +778,9 @@ void LoadConfiguration()
   if (strlen(g_sHDDDir) == 0 || g_sHDDDir[0] != '/') {
     char *tmp = getenv("HOME"); /* we don't have HOME?  ^_^  0_0  $_$  */
     if (tmp == NULL) {
-      strcpy(g_sHDDDir, "/");  //begin from the root, then
+      _l__l_strcpy(g_sHDDDir, "/");  //begin from the root, then
     } else {
-      strcpy(g_sHDDDir, tmp);
+      _l__l_strcpy(g_sHDDDir, tmp);
     }
   }
 
@@ -789,16 +789,16 @@ void LoadConfiguration()
     RegLoadString(TEXT("Preferences"), REGVALUE_PREF_SAVESTATE_DIR, 1, &szFilename, MAX_PATH);
   }
   if (szFilename) {
-    strcpy(g_sSaveStateDir, szFilename);
+    _l__l_strcpy(g_sSaveStateDir, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
   if (strlen(g_sSaveStateDir) == 0 || g_sSaveStateDir[0] != '/') {
     char *tmp = getenv("HOME"); /* we don't have HOME?  ^_^  0_0  $_$  */
     if (tmp == NULL) {
-      strcpy(g_sSaveStateDir, "/");  //begin from the root, then
+      _l__l_strcpy(g_sSaveStateDir, "/");  //begin from the root, then
     } else {
-      strcpy(g_sSaveStateDir, tmp);
+      _l__l_strcpy(g_sSaveStateDir, tmp);
     }
   }
 
@@ -808,7 +808,7 @@ void LoadConfiguration()
   }
 
   if (szFilename) {
-    strcpy(g_sFTPServer, szFilename);
+    _l__l_strcpy(g_sFTPServer, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
@@ -818,7 +818,7 @@ void LoadConfiguration()
   }
 
   if (szFilename) {
-    strcpy(g_sFTPServerHDD, szFilename);
+    _l__l_strcpy(g_sFTPServerHDD, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
@@ -828,7 +828,7 @@ void LoadConfiguration()
   }
 
   if (szFilename) {
-    strcpy(g_sFTPLocalDir, szFilename);
+    _l__l_strcpy(g_sFTPLocalDir, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
@@ -838,7 +838,7 @@ void LoadConfiguration()
   }
 
   if (szFilename) {
-    strcpy(g_sFTPUserPass, szFilename);
+    _l__l_strcpy(g_sFTPUserPass, szFilename);
     free(szFilename);
     szFilename = NULL;
   }

@@ -154,3 +154,15 @@ enum eBUTTONSTATE {
 // sizes of status panel
 #define STATUS_PANEL_W    100
 #define STATUS_PANEL_H    48
+
+
+// This should be defined for Windows systems maybe?
+// or we can just always use internal version...
+#if(! HAS_STRLCPY)
+#include <cstring>
+extern std::size_t __l_strlcpy(char *, const char *, size_t);
+# define _l_strcpy(d,s)__l_strlcpy((d),(s),strlen((s)))
+
+#else
+# define _l_strcpy(d,s) strlcpy((d),(s),strlen((s)))
+#endif

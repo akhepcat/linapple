@@ -639,7 +639,7 @@ void DiskSelectImage(int drive, LPSTR pszFilename)
     }/* if isdir */
   } /* while isdir */
   // we chose some file
-  strcpy(g_sCurrentDir, fullPath.c_str());
+  _l_strcpy(g_sCurrentDir, fullPath.c_str());
   RegSaveString(TEXT("Preferences"), REGVALUE_PREF_START_DIR, 1, g_sCurrentDir); // Save it
 
   fullPath += "/" + filename;
@@ -720,7 +720,7 @@ void Disk_FTP_SelectImage(int drive)  // select a disk image using FTP
     }/* if isdir */
   } /* while isdir */
   // we chose some file
-  strcpy(g_sFTPServer, fullPath.c_str());
+  _l_strcpy(g_sFTPServer, fullPath.c_str());
   RegSaveString(TEXT("Preferences"), REGVALUE_FTP_DIR, 1, g_sFTPServer);// save it
 
   fullPath += "/" + filename;
@@ -954,7 +954,7 @@ unsigned int DiskGetSnapshot(SS_CARD_DISK2 *pSS, unsigned int dwSlot)
   pSS->floppywritemode = floppywritemode;
 
   for (unsigned int i = 0; i < 2; i++) {
-    strcpy(pSS->Unit[i].szFileName, g_aFloppyDisk[i].fullname);
+    _l_strcpy(pSS->Unit[i].szFileName, g_aFloppyDisk[i].fullname);
     pSS->Unit[i].track = g_aFloppyDisk[i].track;
     pSS->Unit[i].phase = g_aFloppyDisk[i].phase;
     pSS->Unit[i].byte = g_aFloppyDisk[i].byte;

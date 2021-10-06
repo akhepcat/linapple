@@ -534,7 +534,7 @@ bool PSP_SaveStateSelectImage(bool saveit)
       }
     }
   }
-  strcpy(g_sSaveStateDir, fullPath.c_str());
+  _l_strcpy(g_sSaveStateDir, fullPath.c_str());
   RegSaveString(TEXT("Preferences"), REGVALUE_PREF_SAVESTATE_DIR, 1, g_sSaveStateDir); // Save it
 
   backdx = fileIndex; // Store cursor position
