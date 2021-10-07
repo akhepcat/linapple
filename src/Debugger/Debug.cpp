@@ -631,7 +631,7 @@ Update_t CmdBookmarkLoad (int nArgs)
   if (nArgs == 1)
   {
 //    _l_strcpy( sMiniFileName, pFileName );
-  //  strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
+  //  _l_strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 //    _tcscpy(sFileName, g_sCurrentDir); //
 //    _tcscat(sFileName, sMiniFileName);
@@ -7743,7 +7743,7 @@ void DisplayAmbigiousCommands( int nFound )
         break;
 
       sprintf( sText, "%s ", pName );
-      strcat( sPotentialCommands, sText );
+      _l_strcat( sPotentialCommands, sText );
       iWidth += nLen + 1;
       iCommand++;
     }

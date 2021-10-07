@@ -115,7 +115,7 @@ Update_t _PrintSymbolInvalidTable()
 				? ','
 				: '.'
 		);
-		strcat( sText, sTemp );
+		_l_strcat( sText, sTemp );
 	}
 
 //	return ConsoleDisplayError( sText );
@@ -342,7 +342,7 @@ Update_t CmdSymbolsInfo (int nArgs)
 				ConsolePrint( sText );
 				_l_strcpy( sText, sIndent ); // Indent new line
 			}
-			strcat( sText, sTemp );
+			_l_strcat( sText, sTemp );
 		}
 	}
 	ConsolePrint( sText );

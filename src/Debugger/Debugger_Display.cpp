@@ -1288,7 +1288,7 @@ int GetDisassemblyLine ( unsigned short nBaseAddress, DisasmLine_t & line_ )
 	int nSpaces = strlen( line_.sOpCodes );
     while (nSpaces < (int)nMinBytesLen)
 	{
-		strcat( line_.sOpCodes, " " );
+		_l_strcat( line_.sOpCodes, " " );
 		nSpaces++;
 	}
 
@@ -1328,7 +1328,7 @@ void FormatOpcodeBytes ( unsigned short nBaseAddress, DisasmLine_t & line_ )
 		// TODO: If Disassembly_IsDataAddress() don't show spaces...
 		if (g_bConfigDisasmOpcodeSpaces)
 		{
-			strcat( pDst, " " );
+			_l_strcat( pDst, " " );
 			pDst++; // 2.5.3.3 fix
 		}
 	}
@@ -1440,32 +1440,32 @@ void FormatDisassemblyLine( const DisasmLine_t & line, char * sDisassembly, cons
 /*
 	if (line.bTargetIndexed || line.bTargetIndirect)
 	{
-		strcat( sDisassembly, "(" );
+		_l_strcat( sDisassembly, "(" );
 	}
 
 	if (line.bTargetImmediate)
-		strcat( sDisassembly, "#$" );
+		_l_strcat( sDisassembly, "#$" );
 
 	if (line.bTargetValue)
-		strcat( sDisassembly, line.sTarget );
+		_l_strcat( sDisassembly, line.sTarget );
 
 	if (line.bTargetIndirect)
 	{
 		if (line.bTargetX)
-	 		strcat( sDisassembly, ", X" );
+	 		_l_strcat( sDisassembly, ", X" );
 		if (line.bTargetY)
- 			strcat( sDisassembly, ", Y" );
+ 			_l_strcat( sDisassembly, ", Y" );
 	}
 
 	if (line.bTargetIndexed || line.bTargetIndirect)
 	{
-		strcat( sDisassembly, ")" );
+		_l_strcat( sDisassembly, ")" );
 	}
 
 	if (line.bTargetIndirect)
 	{
 		if (line.bTargetY)
- 			strcat( sDisassembly, ", Y" );
+ 			_l_strcat( sDisassembly, ", Y" );
 	}
 */
 	char sTarget[ 32 ];
@@ -1477,15 +1477,15 @@ void FormatDisassemblyLine( const DisasmLine_t & line, char * sDisassembly, cons
 		else
 		if (line.bTargetImmediate)
 		{
-			strcat( sDisassembly, "#" );
+			_l_strcat( sDisassembly, "#" );
 			strncpy( sTarget, line.sTarget, sizeof(sTarget) );
 			sTarget[sizeof(sTarget)-1] = 0;
 		}
 		else
 			sprintf( sTarget, g_aOpmodes[ line.iOpmode ].m_sFormat, line.nTarget );
 
-		strcat( sDisassembly, "$" );
-		strcat( sDisassembly, sTarget );
+		_l_strcat( sDisassembly, "$" );
+		_l_strcat( sDisassembly, sTarget );
 	}
 }
 

@@ -1578,7 +1578,7 @@ Update_t CmdHelpList (int nArgs)
 			nLen += StringCat( sText, pName, nBuf );
 		}
 
-		strcat( sText, " " );
+		_l_strcat( sText, " " );
 		nLen++;
 	}
 
