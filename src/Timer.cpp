@@ -93,7 +93,7 @@ void SysClk_WaitTimer() {
 
   // Loop until next period
   // if more than 500usec sleep to give up CPU
-  while (1) {
+  while (true) {
     current = uSecSinceStart();
     elapsed = current - old;
     if (elapsed >= g_dwUsecPeriod) {

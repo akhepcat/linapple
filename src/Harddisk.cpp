@@ -176,11 +176,11 @@ static void GetImageTitle(LPCTSTR imageFileName, PHDD pHardDrive)
   _tcsncpy(imagetitle, startpos, 127);
   imagetitle[127] = 0;
 
-  bool found = 0;
+  bool found = false;
   int loop = 0;
-  while (imagetitle[loop] && !found) {
+  while ((imagetitle[loop] != 0) && !found) {
     if (IsCharLower(imagetitle[loop])) {
-      found = 1;
+      found = true;
     } else {
       loop++;
     }
@@ -189,7 +189,7 @@ static void GetImageTitle(LPCTSTR imageFileName, PHDD pHardDrive)
   _tcsncpy(pHardDrive->hd_fullname, imagetitle, 127);
   pHardDrive->hd_fullname[127] = 0;
 
-  if (imagetitle[0]) {
+  if (imagetitle[0] != 0) {
     LPTSTR dot = imagetitle;
     if (_tcsrchr(dot, TEXT('.'))) {
       dot = _tcsrchr(dot, TEXT('.'));
@@ -211,7 +211,7 @@ static void NotifyInvalidImage(char *filename)
 
 static void HD_CleanupDrive(int nDrive)
 {
-  if (g_HardDrive[nDrive].hd_file) {
+  if (g_HardDrive[nDrive].hd_file != nullptr) {
     CloseHandle(g_HardDrive[nDrive].hd_file);
   }
   g_HardDrive[nDrive].hd_imageloaded = false;
@@ -223,11 +223,7 @@ static bool HD_Load_Image(int nDrive, LPCSTR filename)
 {
   g_HardDrive[nDrive].hd_file = fopen(filename, "r+b");
 
-  if (g_HardDrive[nDrive].hd_file == INVALID_HANDLE_VALUE) {
-    g_HardDrive[nDrive].hd_imageloaded = false;
-  } else {
-    g_HardDrive[nDrive].hd_imageloaded = true;
-  }
+  g_HardDrive[nDrive].hd_imageloaded = g_HardDrive[nDrive].hd_file != INVALID_HANDLE_VALUE;
 
   return g_HardDrive[nDrive].hd_imageloaded;
 }
@@ -368,20 +364,20 @@ void HD_FTP_Select(int nDrive)
   }
   // we chose some file
   _l_strcpy(g_sFTPServerHDD, fullPath.c_str());
-  RegSaveString(TEXT("Preferences"), REGVALUE_FTP_HDD_DIR, 1, g_sFTPServerHDD);// save it
+  RegSaveString(TEXT("Preferences"), REGVALUE_FTP_HDD_DIR, true, g_sFTPServerHDD);// save it
 
   fullPath += "/" + filename;
 
   std::string localPath = std::string(g_sFTPLocalDir) + "/" + filename; // local path for file
 
   int error = ftp_get(fullPath.c_str(), localPath.c_str());
-  if (!error) {
+  if (error == 0) {
     if (HD_InsertDisk2(nDrive, localPath.c_str())) {
       // save file names for HDD disk 1 or 2
-      if (nDrive) {
-        RegSaveString(TEXT("Preferences"), REGVALUE_HDD_IMAGE2, 1, localPath.c_str());
+      if (nDrive != 0) {
+        RegSaveString(TEXT("Preferences"), REGVALUE_HDD_IMAGE2, true, localPath.c_str());
       } else {
-        RegSaveString(TEXT("Preferences"), REGVALUE_HDD_IMAGE1, 1, localPath.c_str());
+        RegSaveString(TEXT("Preferences"), REGVALUE_HDD_IMAGE1, true, localPath.c_str());
       }
     }
   }
@@ -433,7 +429,7 @@ void HD_Select(int nDrive)
   }
   // we chose some file
   _l_strcpy(g_sHDDDir, fullPath.c_str());
-  RegSaveString(TEXT("Preferences"), REGVALUE_PREF_HDD_START_DIR, 1, g_sHDDDir); // Save it
+  RegSaveString(TEXT("Preferences"), REGVALUE_PREF_HDD_START_DIR, true, g_sHDDDir); // Save it
 
   fullPath += "/" + filename;
 
@@ -441,10 +437,10 @@ void HD_Select(int nDrive)
   // for one drive will be one reg parameter
   if (HD_InsertDisk2(nDrive, fullPath.c_str())) {
     // save file names for HDD disk 1 or 2
-    if (nDrive) {
-      RegSaveString(TEXT("Preferences"), REGVALUE_HDD_IMAGE2, 1, fullPath.c_str());
+    if (nDrive != 0) {
+      RegSaveString(TEXT("Preferences"), REGVALUE_HDD_IMAGE2, true, fullPath.c_str());
     } else {
-      RegSaveString(TEXT("Preferences"), REGVALUE_HDD_IMAGE1, 1, fullPath.c_str());
+      RegSaveString(TEXT("Preferences"), REGVALUE_HDD_IMAGE1, true, fullPath.c_str());
     }
     printf("HDD disk image %s inserted\n", fullPath.c_str());
   }
@@ -518,7 +514,7 @@ static unsigned char HD_IO_EMUL(unsigned short pc, unsigned short addr, unsigned
                 unsigned int fsize = SetFilePointer(pHDD->hd_file, 0, NULL, FILE_END);
                 unsigned int addblocks = pHDD->hd_diskblock - (fsize / 512);
                 FillMemory(pHDD->hd_buf, 512, 0);
-                while (addblocks--) {
+                while ((addblocks--) != 0u) {
                   unsigned int bw;
                   WriteFile(pHDD->hd_file, pHDD->hd_buf, 512, &bw, NULL);
                 }

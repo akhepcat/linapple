@@ -44,7 +44,7 @@ int getstatFTP(struct ftpparse *fp, uintmax_t *size)
 {
   // gets file status and returns: 0 - special or error, 1 - file is a directory, 2 - file is a normal file
   // In: fp - ftpparse struct ftom ftpparse.h
-  if (!fp->namelen)
+  if (fp->namelen == 0)
     return 0;
   if (fp->flagtrycwd == 1)
     return 1;  // can CWD, it is dir then
@@ -82,7 +82,7 @@ private:
 const std::vector<file_entry_t> FTP_file_list_generator_t::generate_file_list()
 {
   char ftpdirpath[MAX_PATH];
-  snprintf(ftpdirpath, MAX_PATH, "%s/%s%s", g_sFTPLocalDir, g_sFTPDirListing, md5str(directory.c_str())); // get path for FTP dir listing
+  snprintf(ftpdirpath, MAX_PATH, "%.*s/%.*s%.*s", int(strlen(g_sFTPLocalDir)), g_sFTPLocalDir, int(strlen(g_sFTPDirListing)), g_sFTPDirListing , int(strlen(md5str(directory.c_str()))), md5str(directory.c_str())  ); // get path for FTP dir listing
 
   bool OKI;
   #ifndef _WIN32
@@ -90,7 +90,7 @@ const std::vector<file_entry_t> FTP_file_list_generator_t::generate_file_list()
   if (stat(ftpdirpath, &info) == 0 && info.st_mtime > time(NULL) - RENEW_TIME) {
     OKI = false; // use this file
   } else {
-    OKI = ftp_get(directory.c_str(), ftpdirpath); // get ftp dir listing
+    OKI = (ftp_get(directory.c_str(), ftpdirpath) != 0u); // get ftp dir listing
   }
   #else
   // in WIN32 let's use constant caching? -- need to be redone using file.mtime
@@ -117,7 +117,7 @@ const std::vector<file_entry_t> FTP_file_list_generator_t::generate_file_list()
   FILE *fdir = fopen(ftpdirpath, "r");
   char *tmp;
   char tmpstr[512];
-  while ((tmp = fgets(tmpstr, 512, fdir))) // first looking for directories
+  while ((tmp = fgets(tmpstr, 512, fdir)) != nullptr) // first looking for directories
   {
     // clear and then try to fill in FTP_PARSE struct
     struct ftpparse FTP_PARSE; // for parsing ftp directories

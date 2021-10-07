@@ -47,7 +47,7 @@ bool         g_KeyboardRockerSwitch = false;  // keyboard/video ROM charset togg
 
 #ifdef KEY_OLD
 // Original
-static bool keywaiting = 0;
+static bool keywaiting = false;
 #else
 // Buffered key input:
 // - Needed on faster PCs where aliasing occurs during short/fast bursts of 6502 code.
@@ -71,7 +71,7 @@ static unsigned char g_nLastKey = 0x00;
 
 void KeybReset() {
   #ifdef KEY_OLD
-  keywaiting = 0;
+  keywaiting = false;
   #else
   g_nNextInIdx = 0;
   g_nNextOutIdx = 0;
@@ -102,9 +102,9 @@ void KeybUpdateCtrlShiftStatus() {
   Uint8 *keys;
   keys = SDL_GetKeyState(NULL);
 
-  g_bShiftKey = (keys[SDLK_LSHIFT] | keys[SDLK_RSHIFT]); // 0x8000 KF_UP   SHIFT
-  g_bCtrlKey = (keys[SDLK_LCTRL] | keys[SDLK_RCTRL]);  // CTRL
-  g_bAltKey = (keys[SDLK_LALT] | keys[SDLK_RALT]);  // ALT
+  g_bShiftKey = ((keys[SDLK_LSHIFT] | keys[SDLK_RSHIFT]) != 0); // 0x8000 KF_UP   SHIFT
+  g_bCtrlKey = ((keys[SDLK_LCTRL] | keys[SDLK_RCTRL]) != 0);  // CTRL
+  g_bAltKey = ((keys[SDLK_LALT] | keys[SDLK_RALT]) != 0);  // ALT
 }
 
 unsigned char KeybGetKeycode()    // Used by MemCheckPaging() & VideoCheckMode()
@@ -373,7 +373,7 @@ int KeybDecodeKeyFR(int key)
       case 'w':
         return 'z';
       case ',':
-        return (g_bShiftKey | g_bCapsLock) ? 'M' : 'm';
+        return (static_cast<int>(g_bShiftKey) | static_cast<int>(g_bCapsLock)) != 0 ? 'M' : 'm';
       case ';':
         return (g_bShiftKey) ? '<' : ',';
       case ':':
@@ -554,7 +554,7 @@ void KeybQueueKeypress(int key, bool bASCII)
   }
 
   #ifdef KEY_OLD
-  keywaiting = 1;
+  keywaiting = true;
   #else
   bool bOverflow = false;
 
@@ -600,8 +600,8 @@ unsigned char KeybReadFlag(unsigned short, unsigned short, unsigned char, unsign
   Uint8 *keys;
   keys = SDL_GetKeyState(NULL);
   #ifdef KEY_OLD
-  keywaiting = 0;
-  return keycode | (keys[lastvirtkey] ? 0x80 : 0);
+  keywaiting = false;
+  return keycode | (keys[lastvirtkey] != 0u ? 0x80 : 0);
   #else
   unsigned char nKey = (keys[g_nKeyBuffer[g_nNextOutIdx].nVirtKey]) ? 0x80 : 0;
   nKey |= g_nKeyBuffer[g_nNextOutIdx].nAppleKey;

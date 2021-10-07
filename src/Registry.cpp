@@ -49,7 +49,7 @@ char *estrndup(const char *s, uint length) {
   char *p;
 
   p = (char *) malloc(length + 1);
-  if (!p) {
+  if (p == nullptr) {
     return (char *) NULL;
   }
   memcpy(p, s, length);
@@ -58,7 +58,7 @@ char *estrndup(const char *s, uint length) {
 }
 
 char *php_trim(char *c, int len) {
-  register int i;
+  int i;
   int trimmed = 0;
   char mask[256];
   static char maskVal[] = " \n\r\t\v\0";
@@ -67,7 +67,7 @@ char *php_trim(char *c, int len) {
 
   // trim chars from beginning of the line
   for (i = 0; i < len; i++) {
-    if (mask[(unsigned char) c[i]]) {
+    if (mask[(unsigned char) c[i]] != 0) {
       trimmed++;
     } else {
       break;
@@ -78,7 +78,7 @@ char *php_trim(char *c, int len) {
 
   // trim chars from line end
   for (i = len - 1; i >= 0; i--) {
-    if (mask[(unsigned char) c[i]]) {
+    if (mask[(unsigned char) c[i]] != 0) {
       len--;
     } else {
       break;
@@ -92,7 +92,7 @@ bool ReturnKeyValue(char *line, char **key, char **value) {
   // line should be:  some key  =  some value
   // functions returns trimmed key and value
   char *br = strchr(line, '=');
-  if (!br) {
+  if (br == nullptr) {
     *key = *value = NULL;
     return false; // no sign of '=' sign. Sorry for some kalambur --bb
   }
@@ -105,7 +105,7 @@ bool ReturnKeyValue(char *line, char **key, char **value) {
     return false; // omit comments (lines with #)
   }
   *value = php_trim(br, strlen(br));
-  if (*key && *value) {
+  if ((*key != nullptr) && (*value != nullptr)) {
     return true;
   }
 
@@ -124,8 +124,8 @@ char *ReadRegString(const char *key) {
   char *mvalue;
   char line[BUFSIZE];
   int nkey = strlen(key);  // length of key
-  while (fgets(line, BUFSIZE, registry)) {
-    if (ReturnKeyValue(line, &mkey, &mvalue) && (!strncmp(mkey, key, nkey))) {
+  while (fgets(line, BUFSIZE, registry) != nullptr) {
+    if (ReturnKeyValue(line, &mkey, &mvalue) && (strncmp(mkey, key, nkey) == 0)) {
       free(mkey);
       return mvalue;
     }
@@ -139,7 +139,7 @@ bool RegLoadString(LPCTSTR section, LPCTSTR key, bool peruser, char **buffer, un
   // will ignore section, per user
   char *value;
   value = ReadRegString(key); // read value for a given keyhandle
-  if (value) {
+  if (value != nullptr) {
     if (strlen(value) > chars)
       value[chars] = '\0'; // cut string
     *buffer = value;
@@ -151,17 +151,17 @@ bool RegLoadString(LPCTSTR section, LPCTSTR key, bool peruser, char **buffer, un
 }
 
 bool RegLoadValue(LPCTSTR section, LPCTSTR key, bool peruser, unsigned int *value) {
-  if (!value) {
-    return 0;
+  if (value == nullptr) {
+    return false;
   }
 
   char *sztmp;
   if (!RegLoadString(section, key, peruser, &sztmp, 32)) {
-    return 0;
+    return false;
   }
   *value = (unsigned int) atoi(sztmp);
   free(sztmp);
-  return 1;
+  return true;
 }
 
 void RegSaveKeyValue(char *NKey, char *NValue) {

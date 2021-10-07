@@ -56,7 +56,7 @@ iofunction IORead[256];
 iofunction IOWrite[256];
 static LPVOID SlotParameters[NUM_SLOTS];
 
-static bool lastwriteram = 0;
+static bool lastwriteram = false;
 
 LPBYTE mem = NULL;
 
@@ -72,7 +72,7 @@ static LPBYTE pCxRomInternal = NULL;
 static LPBYTE pCxRomPeripheral = NULL;
 
 static unsigned int memmode = MF_HRAM_BANK2 | MF_SLOTCXROM | MF_HRAM_WRITE;
-static bool modechanging = 0;
+static bool modechanging = false;
 
 MemoryInitPattern_e g_eMemoryInitPattern = MIP_FF_FF_00_00;
 
@@ -404,7 +404,7 @@ static eExpansionRomType g_eExpansionRomType = eExpRomNull;
 static unsigned int g_uPeripheralRomSlot = 0;
 
 unsigned char IO_Null(unsigned short programcounter, unsigned short address, unsigned char write, unsigned char value, ULONG nCyclesLeft) {
-  if (!write) {
+  if (write == 0u) {
     return MemReadFloatingBus(nCyclesLeft);
   }
   return 0;
@@ -448,9 +448,9 @@ unsigned char IORead_Cxxx(unsigned short programcounter, unsigned short address,
   if (IS_APPLE2 || SW_SLOTCXROM) {
     if ((address >= 0xC100) && (address <= 0xC7FF)) {
       const unsigned int uSlot = (address >> 8) & 0xF;
-      if ((uSlot != 3) && ExpansionRom[uSlot]) {
+      if ((uSlot != 3) && (ExpansionRom[uSlot] != nullptr)) {
         IO_SELECT |= 1 << uSlot;
-      } else if ((SW_SLOTC3ROM) && ExpansionRom[uSlot]) {
+      } else if (((SW_SLOTC3ROM) != 0u) && (ExpansionRom[uSlot] != nullptr)) {
         IO_SELECT |= 1 << uSlot;    // Slot3 & Peripheral ROM
       } else if (!SW_SLOTC3ROM) {
         IO_SELECT_InternalROM = 1;  // Slot3 & Internal ROM
@@ -459,23 +459,23 @@ unsigned char IORead_Cxxx(unsigned short programcounter, unsigned short address,
       IO_STROBE = 1;
     }
 
-    if (IO_SELECT && IO_STROBE) {
+    if ((IO_SELECT != 0u) && (IO_STROBE != 0u)) {
       // Enable Peripheral Expansion ROM
       unsigned int uSlot = 1;
       for (; uSlot < NUM_SLOTS; uSlot++) {
-        if (IO_SELECT & (1 << uSlot)) {
+        if ((IO_SELECT & (1 << uSlot)) != 0) {
           _ASSERT(IO_SELECT & ~(1 << uSlot) == 0);
           break;
         }
       }
 
-      if (ExpansionRom[uSlot] && (g_uPeripheralRomSlot != uSlot)) {
+      if ((ExpansionRom[uSlot] != nullptr) && (g_uPeripheralRomSlot != uSlot)) {
         memcpy(pCxRomPeripheral + 0x800, ExpansionRom[uSlot], 0x800);
         memcpy(mem + 0xC800, ExpansionRom[uSlot], 0x800);
         g_eExpansionRomType = eExpRomPeripheral;
         g_uPeripheralRomSlot = uSlot;
       }
-    } else if (IO_SELECT_InternalROM && IO_STROBE && (g_eExpansionRomType != eExpRomInternal)) {
+    } else if ((IO_SELECT_InternalROM != 0u) && (IO_STROBE != 0u) && (g_eExpansionRomType != eExpRomInternal)) {
       // Enable Internal ROM
       // . Get this for PR#3
       memcpy(mem + 0xC800, pCxRomInternal + 0x800, 0x800);
@@ -494,7 +494,7 @@ unsigned char IORead_Cxxx(unsigned short programcounter, unsigned short address,
       IO_STROBE = 1;
     }
 
-    if (!SW_SLOTCXROM && IO_SELECT_InternalROM && IO_STROBE && (g_eExpansionRomType != eExpRomInternal)) {
+    if (!SW_SLOTCXROM && (IO_SELECT_InternalROM != 0u) && (IO_STROBE != 0u) && (g_eExpansionRomType != eExpRomInternal)) {
       // Enable Internal ROM
       memcpy(mem + 0xC800, pCxRomInternal + 0x800, 0x800);
       g_eExpansionRomType = eExpRomInternal;
@@ -617,9 +617,9 @@ void SetMemMode(unsigned int uNewMemMode)
 
 void ResetPaging(bool initialize)
 {
-  lastwriteram = 0;
+  lastwriteram = false;
   memmode = MF_HRAM_BANK2 | MF_SLOTCXROM | MF_HRAM_WRITE;
-  MemUpdatePaging(initialize, 0);
+  MemUpdatePaging(initialize, false);
 }
 
 void MemUpdatePaging(bool initialize, bool updatewriteonly) {
@@ -763,7 +763,7 @@ void MemUpdatePaging(bool initialize, bool updatewriteonly) {
   if (!updatewriteonly) {
     for (loop = 0x00; loop < 0x100; loop++) {
       if (initialize || (oldshadow[loop] != memshadow[loop])) {
-        if ((!(initialize)) && ((*(memdirty + loop) & 1) || (loop <= 1))) {
+        if ((!(initialize)) && (((*(memdirty + loop) & 1) != 0) || (loop <= 1))) {
           *(memdirty + loop) &= ~1;
           CopyMemory(oldshadow[loop], mem + (loop << 8), 256);
         }
@@ -779,7 +779,7 @@ void MemUpdatePaging(bool initialize, bool updatewriteonly) {
 // TODO: >= Apple2e only?
 unsigned char MemCheckPaging(unsigned short, unsigned short address, unsigned char, unsigned char, ULONG) {
   address &= 0xFF;
-  bool result = 0;
+  bool result = false;
   switch (address) {
     case 0x11:
       result = SW_HRAM_BANK2;
@@ -829,7 +829,7 @@ void MemDestroy() {
   #ifdef RAMWORKS
   for (unsigned int i=1; i<g_uMaxExPages; i++)
   {
-    if (RWpages[i])
+    if (RWpages[i] != nullptr)
     {
       VirtualFree(RWpages[i], 0, MEM_RELEASE);
       RWpages[i] = NULL;
@@ -935,7 +935,7 @@ bool MemIsAddrCodeMemory(const USHORT addr)
   if (addr <= APPLE_SLOT_END)     // [$C100..C7FF]
   {
     const unsigned int uSlot = (addr >> 8) & 0x7;
-    return g_bmSlotInit & (1<<uSlot); // card present in this slot?
+    return (g_bmSlotInit & (1<<uSlot)) != 0; // card present in this slot?
   }
 
   // [$C800..CFFF]
@@ -976,7 +976,7 @@ int MemInitialize() // returns -1 if any error during initialization
   pCxRomInternal = (LPBYTE) VirtualAlloc(NULL, CxRomSize, MEM_COMMIT, PAGE_READWRITE);
   pCxRomPeripheral = (LPBYTE) VirtualAlloc(NULL, CxRomSize, MEM_COMMIT, PAGE_READWRITE);
 
-  if (!memaux || !memdirty || !memimage || !memmain || !memrom || !pCxRomInternal || !pCxRomPeripheral) {
+  if ((memaux == nullptr) || (memdirty == nullptr) || (memimage == nullptr) || (memmain == nullptr) || (memrom == nullptr) || (pCxRomInternal == nullptr) || (pCxRomPeripheral == nullptr)) {
     fprintf(stderr, "Unable to allocate required memory. Sorry.\n");
     return -1;
   }
@@ -985,8 +985,8 @@ int MemInitialize() // returns -1 if any error during initialization
   // allocate memory for RAMWorks III - up to 8MB
   RWpages[0] = memaux;
   unsigned int i = 1;
-  while ((i < g_uMaxExPages) && (RWpages[i] =
-           (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE))) {
+  while ((i < g_uMaxExPages) && ((RWpages[i] =
+           (LPBYTE) VirtualAlloc(NULL,_6502_MEM_END+1,MEM_COMMIT,PAGE_READWRITE)) != nullptr)) {
     i++;
   }
   #endif
@@ -1078,7 +1078,7 @@ void MemReset() {
   mem = memimage;
 
   // Initialize paging, filling in the 64k memory image
-  ResetPaging(1);
+  ResetPaging(true);
 
   // Initialize & reset the cpu
   // . Do this after ROM has been copied back to mem[], so that PC is correctly init'ed from 6502's reset vector
@@ -1089,7 +1089,7 @@ void MemReset() {
 // . Soft-reset (Ctrl+Reset)
 // . Snapshot_LoadState()
 void MemResetPaging() {
-  ResetPaging(0);
+  ResetPaging(false);
 }
 
 // Called by Disk][ I/O only
@@ -1098,9 +1098,9 @@ unsigned char MemReturnRandomData(unsigned char highbit) {
                                   0x7F, 0x7F};
   unsigned char r = (unsigned char)(rand() & 0xFF);
   if (r <= 170) {
-    return 0x20 | (highbit ? 0x80 : 0);
+    return 0x20 | (highbit != 0u ? 0x80 : 0);
   } else {
-    return retval[r & 15] | (highbit ? 0x80 : 0);
+    return retval[r & 15] | (highbit != 0u ? 0x80 : 0);
   }
 }
 
@@ -1110,7 +1110,7 @@ unsigned char MemReadFloatingBus(const ULONG uExecutedCycles) {
 
 unsigned char MemReadFloatingBus(const unsigned char highbit, const ULONG uExecutedCycles) {
   unsigned char r = *(LPBYTE)(mem + VideoGetScannerAddress(NULL, uExecutedCycles));
-  return (r & ~0x80) | ((highbit) ? 0x80 : 0);
+  return (r & ~0x80) | ((highbit) != 0u ? 0x80 : 0);
 }
 
 unsigned char MemSetPaging(unsigned short programcounter, unsigned short address, unsigned char write, unsigned char value, ULONG nCyclesLeft) {
@@ -1119,14 +1119,14 @@ unsigned char MemSetPaging(unsigned short programcounter, unsigned short address
 
   // Determine the new memory paging mode.
   if ((address >= 0x80) && (address <= 0x8F)) {
-    bool writeram = (address & 1);
+    bool writeram = (address & 1) != 0;
     memmode &= ~(MF_HRAM_BANK2 | MF_HIGHRAM | MF_HRAM_WRITE);
 		{
-			lastwriteram = 1; // note: because diags.do doesn't set switches twice!
+			lastwriteram = true; // note: because diags.do doesn't set switches twice!
 			if (lastwriteram && writeram) {
 				memmode |= MF_HRAM_WRITE;
 			}
-			if (!(address & 8)) {
+			if ((address & 8) == 0) {
 				memmode |= MF_HRAM_BANK2;
 			}
 			if (((address & 2) >> 1) == (address & 1)) {
@@ -1187,10 +1187,10 @@ unsigned char MemSetPaging(unsigned short programcounter, unsigned short address
       #ifdef RAMWORKS
       case 0x71: // extended memory aux page number
       case 0x73: // Ramworks III set aux page number
-        if ((value < g_uMaxExPages) && RWpages[value]) {
+        if ((value < g_uMaxExPages) && (RWpages[value] != nullptr)) {
           g_uActiveBank = value;
           memaux = RWpages[value];
-          MemUpdatePaging(0,0);
+          MemUpdatePaging(false,false);
         }
         break;
       #endif
@@ -1200,19 +1200,19 @@ unsigned char MemSetPaging(unsigned short programcounter, unsigned short address
   // If the emulated program has just update the memory write mode and is
   // about to update the memory read mode, hold off on any processing until it does so.
   if ((address >= 4) && (address <= 5) && ((*(LPDWORD)(mem + programcounter) & 0x00FFFEFF) == 0x00C0028D)) {
-    modechanging = 1;
-    return write ? 0 : MemReadFloatingBus(1, nCyclesLeft);
+    modechanging = true;
+    return write != 0u ? 0 : MemReadFloatingBus(1, nCyclesLeft);
   }
   if ((address >= 0x80) && (address <= 0x8F) && (programcounter < 0xC000) &&
       (((*(LPDWORD)(mem + programcounter) & 0x00FFFEFF) == 0x00C0048D) ||
        ((*(LPDWORD)(mem + programcounter) & 0x00FFFEFF) == 0x00C0028D))) {
-    modechanging = 1;
-    return write ? 0 : MemReadFloatingBus(1, nCyclesLeft);
+    modechanging = true;
+    return write != 0u ? 0 : MemReadFloatingBus(1, nCyclesLeft);
   }
 
   // If the memory paging mode has changed, update our memory images and write tables.
   if ((lastmemmode != memmode) || modechanging) {
-    modechanging = 0;
+    modechanging = false;
 
     if ((lastmemmode & MF_SLOTCXROM) != (memmode & MF_SLOTCXROM)) {
       if (SW_SLOTCXROM) {
@@ -1231,14 +1231,14 @@ unsigned char MemSetPaging(unsigned short programcounter, unsigned short address
       }
     }
 
-    MemUpdatePaging(0, 0);
+    MemUpdatePaging(false, false);
   }
 
   if ((address <= 1) || ((address >= 0x54) && (address <= 0x57))) {
     return VideoSetMode(programcounter, address, write, value, nCyclesLeft);
   }
 
-  return write ? 0 : MemReadFloatingBus(nCyclesLeft);
+  return write != 0u ? 0 : MemReadFloatingBus(nCyclesLeft);
 }
 
 LPVOID MemGetSlotParameters(unsigned int uSlot) {
@@ -1263,8 +1263,8 @@ unsigned int MemSetSnapshot(SS_BaseMemory *pSS) {
   lastwriteram = pSS->bLastWriteRam;
   memcpy(memmain, pSS->nMemMain, nMemMainSize);
   memcpy(memaux, pSS->nMemAux, nMemAuxSize);
-  modechanging = 0;
-  MemUpdatePaging(1, 0);    // Initialize=1, UpdateWriteOnly=0
+  modechanging = false;
+  MemUpdatePaging(true, false);    // Initialize=1, UpdateWriteOnly=0
 
   return 0;
 }

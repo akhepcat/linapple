@@ -109,7 +109,7 @@ static long currentyear; /* approximation to current year */
 static void initbase(void)
 {
   struct tm *t;
-  if (!flagneedbase)
+  if (flagneedbase == 0)
     return;
 
   base = 0;
@@ -128,7 +128,7 @@ static void initnow(void)
   initbase();
   now = time((time_t *) 0) - base;
 
-  if (flagneedcurrentyear) {
+  if (flagneedcurrentyear != 0) {
     day = now / 86400;
     if ((now % 86400) < 0) {
       --day;
@@ -202,7 +202,7 @@ static int getmonth(char *buf, int len) {
   int i;
   if (len == 3)
     for (i = 0; i < 12; ++i)
-      if (check(buf, months[i]))
+      if (check(buf, months[i]) != 0)
         return i;
   return -1;
 }
@@ -437,7 +437,7 @@ int ftpparse(struct ftpparse *fp, char *buf, int len) {
         }
       }
     }
-    if (!fp->flagtrycwd) {
+    if (fp->flagtrycwd == 0) {
       fp->flagtryretr = 1;
     }
     while (buf[i] != ' ') {

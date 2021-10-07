@@ -267,14 +267,14 @@ void sample_buffer::mix_into(sample_t *stream, size_t len,
     read_index += num;
   } else { // handle wrap around
     const auto len1 = buffer.size() - read_index;
-    if (len1) {
+    if (len1 != 0u) {
       std::transform(stream, stream+len1, buffer.begin()+read_index,
                      stream, mix_func);
     }
 
     const auto len2 = num - len1;
     read_index = len2;
-    if (len2) {
+    if (len2 != 0u) {
       std::transform(stream+len1, stream+len1+len2, buffer.begin(),
                      stream+len1, mix_func);
     }

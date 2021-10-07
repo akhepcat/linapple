@@ -211,7 +211,7 @@ void CMouseInterface::Initialize(LPBYTE pCxRomPeripheral, unsigned int uSlot) {
 
   if (m_pSlotRom == NULL) {
     m_pSlotRom = new unsigned char[FW_SIZE];
-    if (m_pSlotRom) {
+    if (m_pSlotRom != nullptr) {
       memcpy(m_pSlotRom, pData, FW_SIZE);
     }
   }
@@ -230,7 +230,7 @@ void CMouseInterface::SetSlotRom() {
 
   unsigned int uOffset = (m_by6821B << 7) & 0x0700;
   memcpy(pCxRomPeripheral + m_uSlot * 256, m_pSlotRom + uOffset, 256);
-  if (mem) {
+  if (mem != nullptr) {
     memcpy(mem + 0xC000 + m_uSlot * 256, m_pSlotRom + uOffset, 256);
   }
 }
@@ -262,12 +262,12 @@ void CMouseInterface::On6821_A(unsigned char byData) {
 void CMouseInterface::On6821_B(unsigned char byData) {
   unsigned char byDiff = (m_by6821B ^ byData) & 0x3E;
 
-  if (byDiff) {
+  if (byDiff != 0u) {
     m_by6821B &= ~0x3E;
     m_by6821B |= byData & 0x3E;
-    if (byDiff & BIT5)      // Write to 0285 chip
+    if ((byDiff & BIT5) != 0)      // Write to 0285 chip
     {
-      if (byData & BIT5) {
+      if ((byData & BIT5) != 0) {
         m_by6821B |= BIT7;    // OK, I'm ready to read from MC6821
       }
       else {// Clock Activate for read
@@ -283,11 +283,11 @@ void CMouseInterface::On6821_B(unsigned char byData) {
         m_6821.SetPB(m_by6821B);
       }
     }
-    if (byDiff & BIT4) {// Read from 0285 chip ?
-      if (byData & BIT4) {
+    if ((byDiff & BIT4) != 0) {// Read from 0285 chip ?
+      if ((byData & BIT4) != 0) {
         m_by6821B &= ~BIT6;    // OK, I'll prepare next value
       } else { // Clock Activate for write
-        if (m_nBuffPos) { // if m_nBuffPos is 0, something goes wrong!
+        if (m_nBuffPos != 0) { // if m_nBuffPos is 0, something goes wrong!
           m_nBuffPos++;
         }
         if (m_nBuffPos == m_nDataLen || m_nBuffPos > 7) {
@@ -396,7 +396,7 @@ void CMouseInterface::OnWrite() {
     case MOUSE_CLAMP:
       nMin = (m_byBuff[3] << 8) | m_byBuff[1];
       nMax = (m_byBuff[4] << 8) | m_byBuff[2];
-      if (m_byBuff[0] & 1)  // Clamp Y
+      if ((m_byBuff[0] & 1) != 0)  // Clamp Y
         ClampY(nMin, nMax);
       else          // Clamp X
         ClampX(nMin, nMax);
@@ -418,7 +418,7 @@ void CMouseInterface::OnWrite() {
 
 void CMouseInterface::OnMouseEvent() {
   int byState = 0;
-  if (!(m_byMode & 1)) { // Mouse Off
+  if ((m_byMode & 1) == 0) { // Mouse Off
     return;
   }
 
@@ -435,7 +435,7 @@ void CMouseInterface::OnMouseEvent() {
   }
   byState &= ((m_byMode & 0x0E) |
               0x20);  // Keep "X/Y moved since last READMOUSE" for next MOUSE_READ (Contiki v1.3 uses this)
-  if (byState & 0x0E) {
+  if ((byState & 0x0E) != 0) {
     m_byState |= byState;
     CpuIrqAssert(IS_MOUSE);
   }
@@ -458,8 +458,8 @@ void CMouseInterface::Reset() {
   m_byState = 0;
   m_nX = 0;
   m_nY = 0;
-  m_bBtn0 = 0;
-  m_bBtn1 = 0;
+  m_bBtn0 = false;
+  m_bBtn1 = false;
   ClampX(0, 1023);
   ClampY(0, 1023);
   SetPosition(0, 0);
@@ -511,6 +511,6 @@ void CMouseInterface::SetPosition(int xvalue, int xrange, int yvalue, int yrange
 }
 
 void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State) {
-  m_bButtons[Button] = (State == BUTTON_DOWN) ? true : false;
+  m_bButtons[Button] = State == BUTTON_DOWN;
   OnMouseEvent();
 }

@@ -136,7 +136,7 @@ void SpkrDestroy() {
 }
 
 void SpkrInitialize() {
-  if (g_fh) {
+  if (g_fh != nullptr) {
     fprintf(g_fh, "Spkr Config: soundtype = %d ", (int) soundtype);
     switch (soundtype) {
       case SOUND_NONE:
@@ -210,8 +210,8 @@ static void ReinitRemainderBuffer(unsigned int nCyclesRemaining) {
 }
 
 static void UpdateRemainderBuffer(ULONG *pnCycleDiff) {
-  if (g_nRemainderBufferIdx) {
-    while ((g_nRemainderBufferIdx < g_nRemainderBufferSize) && *pnCycleDiff) {
+  if (g_nRemainderBufferIdx != 0u) {
+    while ((g_nRemainderBufferIdx < g_nRemainderBufferSize) && (*pnCycleDiff != 0u)) {
       g_pRemainderBuffer[g_nRemainderBufferIdx] = g_nSpeakerData;
       g_nRemainderBufferIdx++;
       (*pnCycleDiff)--;
@@ -237,7 +237,7 @@ static void UpdateSpkr() {
     UpdateRemainderBuffer(&nCycleDiff);
     ULONG nNumSamples = (ULONG)((double) nCycleDiff / g_fClksPerSpkrSample);
     ULONG nCyclesRemaining = (ULONG)((double) nCycleDiff - (double) nNumSamples * g_fClksPerSpkrSample);
-    while ((nNumSamples--) && (g_nBufferIdx < SPKR_SAMPLE_RATE - 1)) {
+    while (((nNumSamples--) != 0u) && (g_nBufferIdx < SPKR_SAMPLE_RATE - 1)) {
       g_pSpeakerBuffer[g_nBufferIdx++] = g_nSpeakerData;
     }
     ReinitRemainderBuffer(nCyclesRemaining);  // Partially fill 1Mhz sample buffer
@@ -266,7 +266,7 @@ unsigned char SpkrToggle(unsigned short, unsigned short, unsigned char, unsigned
 
 void SpkrUpdate(unsigned int totalcycles) {
   if (!g_bSpkrToggleFlag) {
-    if (!g_nSpkrQuietCycleCount) {
+    if (g_nSpkrQuietCycleCount == 0u) {
       g_nSpkrQuietCycleCount = g_nCumulativeCycles;
     } else if (g_nCumulativeCycles - g_nSpkrQuietCycleCount > (UINT64)g_fCurrentCLK6502 / 5)
     {

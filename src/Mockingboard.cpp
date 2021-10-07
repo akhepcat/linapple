@@ -228,7 +228,7 @@ static void StopTimer(SY6522_AY8910 *pMB) {
 
 static void ResetSY6522(SY6522_AY8910 *pMB) {
   memset(&pMB->sy6522, 0, sizeof(SY6522));
-  if (pMB->nTimerStatus) {
+  if (pMB->nTimerStatus != 0u) {
     StopTimer(pMB);
   }
   pMB->nAYCurrentRegister = 0;
@@ -242,7 +242,7 @@ static void AY8910_Write(unsigned char nDevice, unsigned char nReg, unsigned cha
     AY8910_reset(nDevice + 2 * nAYDevice);
   } else {
     // Determine the AY8910 inputs
-    int nBDIR = (nValue & 2) ? 1 : 0;
+    int nBDIR = (nValue & 2) != 0 ? 1 : 0;
     const int nBC2 = 1;    // Hardwired to +5V
     int nBC1 = nValue & 1;
 
@@ -274,7 +274,7 @@ static void AY8910_Write(unsigned char nDevice, unsigned char nReg, unsigned cha
 static void UpdateIFR(SY6522_AY8910 *pMB) {
   pMB->sy6522.IFR &= 0x7F;
 
-  if (pMB->sy6522.IFR & pMB->sy6522.IER & 0x7F) {
+  if ((pMB->sy6522.IFR & pMB->sy6522.IER & 0x7F) != 0) {
     pMB->sy6522.IFR |= 0x80;
   }
 
@@ -291,7 +291,7 @@ static void UpdateIFR(SY6522_AY8910 *pMB) {
   // Phasor's SSI263 appears to be wired directly to the 6502's IRQ (ie. not via a 6522)
   // . I assume Phasor's 6522s just generate 6502 IRQs (not NMIs)
 
-  if (bIRQ) {
+  if (bIRQ != 0u) {
     CpuIrqAssert(IS_6522);
   } else {
     CpuIrqDeassert(IS_6522);
@@ -320,12 +320,12 @@ static void SY6522_Write(unsigned char nDevice, unsigned char nReg, unsigned cha
       #endif
 
       if (g_bPhasorEnable) {
-        int nAY_CS = (g_nPhasorMode & 1) ? (~(nValue >> 3) & 3) : 1;
+        int nAY_CS = (g_nPhasorMode & 1) != 0 ? (~(nValue >> 3) & 3) : 1;
 
-        if (nAY_CS & 1)
+        if ((nAY_CS & 1) != 0)
           AY8910_Write(nDevice, nReg, nValue, 0);
 
-        if (nAY_CS & 2)
+        if ((nAY_CS & 2) != 0)
           AY8910_Write(nDevice, nReg, nValue, 1);
       } else {
         AY8910_Write(nDevice, nReg, nValue, 0);
@@ -392,14 +392,14 @@ static void SY6522_Write(unsigned char nDevice, unsigned char nReg, unsigned cha
       UpdateIFR(pMB);
       break;
     case 0x0e:  // IER
-      if (!(nValue & 0x80)) {
+      if ((nValue & 0x80) == 0) {
         // Clear those bits which are set in the lower 7 bits.
         nValue ^= 0x7F;
         pMB->sy6522.IER &= nValue;
         UpdateIFR(pMB);
 
         // Check if timer has been disabled.
-        if (pMB->sy6522.IER & IxR_TIMER1)
+        if ((pMB->sy6522.IER & IxR_TIMER1) != 0)
           break;
 
         if (pMB->nTimerStatus == 0)
@@ -579,7 +579,7 @@ static void SSI263_Write(unsigned char nDevice, unsigned char nReg, unsigned cha
       #if LOG_SSI263
       if(g_fh) fprintf(g_fh, "CTRL  = %d, ART = 0x%02X, AMP=0x%02X\n", nValue>>7, (nValue&ARTICULATION_MASK)>>4, nValue&AMPLITUDE_MASK);
       #endif
-      if ((pMB->SpeechChip.CtrlArtAmp & CONTROL_MASK) && !(nValue & CONTROL_MASK))  // H->L
+      if (((pMB->SpeechChip.CtrlArtAmp & CONTROL_MASK) != 0) && ((nValue & CONTROL_MASK) == 0))  // H->L
         pMB->SpeechChip.CurrentMode = pMB->SpeechChip.DurationPhonome & DURATION_MODE_MASK;
       pMB->SpeechChip.CtrlArtAmp = nValue;
       break;
@@ -682,7 +682,7 @@ static void Votrax_Write(unsigned char nDevice, unsigned char nValue) {
 
 void MB_Update() {
   if (!g_bMB_RegAccessedFlag) {
-    if (!g_nMB_InActiveCycleCount) {
+    if (g_nMB_InActiveCycleCount == 0u) {
       g_nMB_InActiveCycleCount = g_nCumulativeCycles;
     } else if (g_nCumulativeCycles - g_nMB_InActiveCycleCount > (UINT64)g_fCurrentCLK6502 / 10) {
       // After 0.1 sec of Apple time, assume MB is not active
@@ -710,7 +710,7 @@ void MB_Update() {
     nNumSamples = 2*nNumSamplesPerPeriod;
   }
 
-  if(nNumSamples) {
+  if(nNumSamples != 0) {
     for(int nChip=0; nChip<NUM_AY8910; nChip++) {
       AY8910Update(nChip, &ppAYVoiceBuffer[nChip*NUM_VOICES_PER_AY8910], nNumSamples);
     }
@@ -1089,18 +1089,18 @@ static unsigned char MB_Read(unsigned short PC, unsigned short nAddr, unsigned c
     unsigned char nRes = 0;
     int CS;
 
-    if (g_nPhasorMode & 1) {
+    if ((g_nPhasorMode & 1) != 0) {
       CS = ((nAddr & 0x80) >> 6) | ((nAddr & 0x10) >> 4);  // 0, 1, 2 or 3
     }
     else { // Mockingboard Mode
       CS = ((nAddr & 0x80) >> 7) + 1; // 1 or 2
     }
 
-    if (CS & 1) {
+    if ((CS & 1) != 0) {
       nRes |= SY6522_Read(nMB * NUM_DEVS_PER_MB + SY6522_DEVICE_A, nAddr & 0xf);
     }
 
-    if (CS & 2) {
+    if ((CS & 2) != 0) {
       nRes |= SY6522_Read(nMB * NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr & 0xf);
     }
 
@@ -1143,16 +1143,16 @@ static unsigned char MB_Write(unsigned short PC, unsigned short nAddr, unsigned 
 
     int CS;
 
-    if (g_nPhasorMode & 1) {
+    if ((g_nPhasorMode & 1) != 0) {
       CS = ((nAddr & 0x80) >> 6) | ((nAddr & 0x10) >> 4);  // 0, 1, 2 or 3
     } else {// Mockingboard Mode
       CS = ((nAddr & 0x80) >> 7) + 1; // 1 or 2
     }
 
-    if (CS & 1) {
+    if ((CS & 1) != 0) {
       SY6522_Write(nMB * NUM_DEVS_PER_MB + SY6522_DEVICE_A, nAddr & 0xf, nValue);
     }
-    if (CS & 2) {
+    if ((CS & 2) != 0) {
       SY6522_Write(nMB * NUM_DEVS_PER_MB + SY6522_DEVICE_B, nAddr & 0xf, nValue);
     }
     if ((nOffset >= SSI263_Offset) && (nOffset <= (SSI263_Offset + 0x05))) {
@@ -1179,7 +1179,7 @@ static unsigned char PhasorIO(unsigned short PC, unsigned short nAddr, unsigned 
   if (g_nPhasorMode < 2) {
     g_nPhasorMode = nAddr & 1;
   }
-  double fCLK = (nAddr & 4) ? CLOCK_6502 * 2 : CLOCK_6502;
+  double fCLK = (nAddr & 4) != 0 ? CLOCK_6502 * 2 : CLOCK_6502;
 
   AY8910_InitClock((int) fCLK);
 
@@ -1226,7 +1226,7 @@ void MB_EndOfVideoFrame() {
   if (g_SoundcardType == SC_NONE) {
     return;
   }
-  if (!g_bFullSpeed && !g_bMBTimerIrqActive && !(g_MB[0].sy6522.IFR & IxR_TIMER1)) {
+  if (!g_bFullSpeed && !g_bMBTimerIrqActive && ((g_MB[0].sy6522.IFR & IxR_TIMER1) == 0)) {
     MB_Update();
   }
 }
@@ -1252,7 +1252,7 @@ void MB_UpdateCycles(ULONG uExecutedCycles) {
     pMB->sy6522.TIMER2_COUNTER.w -= nClocks;
 
     // Check for counter underflow
-    bool bTimer1Underflow = (!(OldTimer1 & 0x8000) && (pMB->sy6522.TIMER1_COUNTER.w & 0x8000));
+    bool bTimer1Underflow = (((OldTimer1 & 0x8000) == 0) && ((pMB->sy6522.TIMER1_COUNTER.w & 0x8000) != 0));
 
     if (bTimer1Underflow && (g_nMBTimerDevice == i) && g_bMBTimerIrqActive) {
       g_uTimer1IrqCount++;  // DEBUG
@@ -1295,7 +1295,7 @@ void MB_SetSoundcardType(eSOUNDCARDTYPE NewSoundcardType) {
 }
 
 double MB_GetFramePeriod() {
-  return (g_bMBTimerIrqActive || (g_MB[0].sy6522.IFR & IxR_TIMER1)) ? (double) g_n6522TimerPeriod
+  return (g_bMBTimerIrqActive || ((g_MB[0].sy6522.IFR & IxR_TIMER1) != 0)) ? (double) g_n6522TimerPeriod
                                                                     : g_f6522TimerPeriod_NoIRQ;
 }
 

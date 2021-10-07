@@ -369,7 +369,7 @@ void CSuperSerialCard::UpdateCommState() {
 bool CSuperSerialCard::CheckComm() {
   m_dwCommInactivity = 0;
 
-  if ((m_hCommHandle == -1) && m_dwSerialPort) {
+  if ((m_hCommHandle == -1) && (m_dwSerialPort != 0u)) {
     char portname[12];  // we have /dev/ttyS0..X instead of COM1..COMX+1?
     if (m_dwSerialPort < 0 || m_dwSerialPort > 99) {
       m_dwSerialPort = 1; // buffer overflow check
@@ -484,11 +484,11 @@ unsigned char CSuperSerialCard::CommCommand(unsigned short, unsigned short, unsi
     return 0;
   }
 
-  if (write && (value != m_uCommandByte)) {
+  if ((write != 0u) && (value != m_uCommandByte)) {
     m_uCommandByte = value;
 
     // Update the parity
-    if (m_uCommandByte & 0x20) {
+    if ((m_uCommandByte & 0x20) != 0) {
       switch (m_uCommandByte & 0xC0) {
         case 0x00 :
           m_uParity = ODDPARITY;
@@ -507,7 +507,7 @@ unsigned char CSuperSerialCard::CommCommand(unsigned short, unsigned short, unsi
       m_uParity = NOPARITY;
     }
 
-    if (m_uCommandByte & 0x10)  // Receiver mode echo [0=no echo, 1=echo]
+    if ((m_uCommandByte & 0x10) != 0)  // Receiver mode echo [0=no echo, 1=echo]
     {
     }
 
@@ -532,7 +532,7 @@ unsigned char CSuperSerialCard::CommCommand(unsigned short, unsigned short, unsi
     // interrupt request disable [0=enable receiver interrupts]
     m_bRxIrqEnabled = ((m_uCommandByte & 0x02) == 0);
 
-    if (m_uCommandByte & 0x01)  // Data Terminal Ready (DTR) setting [0=set DTR high (indicates 'not ready')]
+    if ((m_uCommandByte & 0x01) != 0)  // Data Terminal Ready (DTR) setting [0=set DTR high (indicates 'not ready')]
     {
       // Note that, although the DTR is generally not used in the SSC (it may actually not
       // be connected!), it must be set to 'low' in order for the 6551 to function correctly.
@@ -549,7 +549,7 @@ unsigned char CSuperSerialCard::CommControl(unsigned short, unsigned short, unsi
     return 0;
   }
 
-  if (write && (value != m_uControlByte)) {
+  if ((write != 0u) && (value != m_uControlByte)) {
     m_uControlByte = value;
 
     // UPDATE THE BAUD RATE
@@ -594,7 +594,7 @@ unsigned char CSuperSerialCard::CommControl(unsigned short, unsigned short, unsi
         break;
     }
 
-    if (m_uControlByte & 0x10) {
+    if ((m_uControlByte & 0x10) != 0) {
       // receiver clock source [0= external, 1= internal]
     }
 
@@ -615,7 +615,7 @@ unsigned char CSuperSerialCard::CommControl(unsigned short, unsigned short, unsi
     }
 
     // UPDATE THE NUMBER OF STOP BITS
-    if (m_uControlByte & 0x80) {
+    if ((m_uControlByte & 0x80) != 0) {
       if ((m_uByteSize == 8) && (m_uParity != NOPARITY))
         m_uStopBits = ONESTOPBIT;
       else if ((m_uByteSize == 5) && (m_uParity == NOPARITY))
@@ -638,12 +638,12 @@ unsigned char CSuperSerialCard::CommReceive(unsigned short, unsigned short, unsi
   }
 
   unsigned char result = 0;
-  if (m_vRecvBytes) {
+  if (m_vRecvBytes != 0u) {
     // Don't need critical section in here as CommThread is waiting for ACK
     result = m_RecvBuffer[0];
     --m_vRecvBytes;
 
-    if (m_vbCommIRQ && !m_vRecvBytes) {
+    if (m_vbCommIRQ && (m_vRecvBytes == 0u)) {
       // Read last byte, so get CommThread to call WaitCommEvent() again
       fprintf(stderr, "CommRecv: SetEvent - ACK\n");
     }
@@ -718,13 +718,13 @@ unsigned char CSuperSerialCard::CommStatus(unsigned short, unsigned short, unsig
   if (m_bTxIrqEnabled && m_bWrittenTx) {
     bIRQ = true;
   }
-  if (m_bRxIrqEnabled && m_vRecvBytes) {
+  if (m_bRxIrqEnabled && (m_vRecvBytes != 0u)) {
     bIRQ = true;
   }
 
   m_bWrittenTx = false;  // Read status reg always clears IRQ
 
-  unsigned char uStatus = ST_TX_EMPTY | (m_vRecvBytes ? ST_RX_FULL : 0x00)
+  unsigned char uStatus = ST_TX_EMPTY | (m_vRecvBytes != 0u ? ST_RX_FULL : 0x00)
                  #ifdef SUPPORT_MODEM
                  | ((modemstatus & MS_RLSD_ON)  ? 0x00 : ST_DCD)  // Need 0x00 to allow ZLink to start up
         | ((modemstatus & MS_DSR_ON)  ? 0x00 : ST_DSR)
@@ -793,7 +793,7 @@ void CSuperSerialCard::CommInitialize(LPBYTE pCxRomPeripheral, unsigned int uSlo
   // Expansion ROM
   if (m_pExpansionRom == NULL) {
     m_pExpansionRom = new unsigned char[SSC_FW_SIZE];
-    if (m_pExpansionRom) {
+    if (m_pExpansionRom != nullptr) {
       memcpy(m_pExpansionRom, pData, SSC_FW_SIZE);
     }
   }
@@ -853,7 +853,7 @@ void CSuperSerialCard::CheckCommEvent(unsigned int dwEvtMask) {
   m_vRecvBytes = read(m_hCommHandle, m_RecvBuffer, 1);
   pthread_mutex_unlock(&m_CriticalSection);
 
-  if (m_bRxIrqEnabled && m_vRecvBytes) {
+  if (m_bRxIrqEnabled && (m_vRecvBytes != 0u)) {
     m_vbCommIRQ = true;
     CpuIrqAssert(IS_SSC);
   }

@@ -1057,10 +1057,7 @@ bool AssemblerPokeOpcodeAddress( const unsigned short nBaseAddress )
 //===========================================================================
 bool TestFlag( AssemblerFlags_e eFlag )
 {
-	if (m_bAsmFlags & eFlag)
-		return true;
-
-	return false;
+	return (m_bAsmFlags & eFlag) != 0;
 }
 
 //===========================================================================

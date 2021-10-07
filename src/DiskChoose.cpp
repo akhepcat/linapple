@@ -228,7 +228,7 @@ bool ChooseImageDialog(int sx, int sy, const string& dir, int slot, file_list_ge
 
     my_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, tempSurface->w, tempSurface->h, tempSurface->format->BitsPerPixel, 0,
                                      0, 0, 0);
-    if (tempSurface->format->palette && my_screen->format->palette) {
+    if ((tempSurface->format->palette != nullptr) && (my_screen->format->palette != nullptr)) {
       SDL_SetColors(my_screen, tempSurface->format->palette->colors, 0, tempSurface->format->palette->ncolors);
     }
 
@@ -361,21 +361,21 @@ bool ChooseImageDialog(int sx, int sy, const string& dir, int slot, file_list_ge
       // control cursor
       keyboard = SDL_GetKeyState(NULL);  // get current state of pressed (and not pressed) keys
 
-      if (keyboard[SDLK_UP] || keyboard[SDLK_LEFT]) {
+      if ((keyboard[SDLK_UP] != 0u) || (keyboard[SDLK_LEFT] != 0u)) {
         if (act_file > 0)
           act_file--;  // up one position
         if (act_file < first_file)
           first_file = act_file;
       }
 
-      if (keyboard[SDLK_DOWN] || keyboard[SDLK_RIGHT]) {
+      if ((keyboard[SDLK_DOWN] != 0u) || (keyboard[SDLK_RIGHT] != 0u)) {
         if (act_file < (file_list.size() - 1))
           act_file++;
         if (act_file >= (first_file + FILES_IN_SCREEN))
           first_file = act_file - FILES_IN_SCREEN + 1;
       }
 
-      if (keyboard[SDLK_PAGEUP]) {
+      if (keyboard[SDLK_PAGEUP] != 0u) {
         if (act_file <= FILES_IN_SCREEN) {
           act_file = 0;
         } else {
@@ -385,7 +385,7 @@ bool ChooseImageDialog(int sx, int sy, const string& dir, int slot, file_list_ge
           first_file = act_file;
       }
 
-      if (keyboard[SDLK_PAGEDOWN]) {
+      if (keyboard[SDLK_PAGEDOWN] != 0u) {
         act_file += FILES_IN_SCREEN;
         if (act_file >= file_list.size())
           act_file = (file_list.size() - 1);
@@ -394,7 +394,7 @@ bool ChooseImageDialog(int sx, int sy, const string& dir, int slot, file_list_ge
       }
 
       // choose an item?
-      if (keyboard[SDLK_RETURN]) {
+      if (keyboard[SDLK_RETURN] != 0u) {
         // dup string from selected file name
         const file_entry_t& file_entry = file_list[act_file];
         filename = file_entry.name;
@@ -408,17 +408,17 @@ bool ChooseImageDialog(int sx, int sy, const string& dir, int slot, file_list_ge
         return true;
       }
 
-      if (keyboard[SDLK_ESCAPE]) {
+      if (keyboard[SDLK_ESCAPE] != 0u) {
         SDL_FreeSurface(my_screen);
         return false;    // ESC has been pressed
       }
 
-      if (keyboard[SDLK_HOME]) {
+      if (keyboard[SDLK_HOME] != 0u) {
         act_file = 0;
         first_file = 0;
       }
 
-      if (keyboard[SDLK_END]) {
+      if (keyboard[SDLK_END] != 0u) {
         act_file = file_list.size() - 1;  // go to the last possible file in list
         if (act_file <= FILES_IN_SCREEN - 1) {
           first_file = 0;
@@ -435,10 +435,10 @@ bool ChooseImageDialog(int sx, int sy, const string& dir, int slot, file_list_ge
         char ch;
         int char_range_idx = 0;
         static char char_range[4][2] = {{'A','Z'},{'a','z'},{'0','9'},{0,0}};
-        while (!char_hit && char_range[char_range_idx][0]) {
+        while (!char_hit && (char_range[char_range_idx][0] != 0)) {
           if (!char_hit) {
             for (ch = char_range[char_range_idx][0]; ch <= char_range[char_range_idx][1]; ch++) {
-              if (keyboard[(unsigned int) ch]) {
+              if (keyboard[(unsigned int) ch] != 0u) {
                 char_hit = true;
                 break;
               }

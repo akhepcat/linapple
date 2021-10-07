@@ -35,15 +35,12 @@ bool WriteFile(HANDLE hFile, LPCVOID lpBuffer, unsigned int nNumberOfBytesToWrit
 /* close handle whatever it has been .... hmmmmm. I just love Microsoft! */
 bool CloseHandle(HANDLE hObject)
 {
-  return (!fclose((FILE *) hObject));
+  return (fclose((FILE *) hObject) == 0);
 }
 
 bool DeleteFile(LPCTSTR lpFileName)
 {
-  if (remove(lpFileName) == 0)
-    return true;
-  else
-    return false;
+  return remove(lpFileName) == 0;
 }
 
 unsigned int GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh)
@@ -62,7 +59,7 @@ LPVOID VirtualAlloc(LPVOID lpAddress, size_t dwSize, unsigned int flAllocationTy
   /* just malloc and alles? 0_0 */
   void *mymemory;
   mymemory = malloc(dwSize);
-  if (flAllocationType & 0x1000)
+  if ((flAllocationType & 0x1000) != 0u)
     ZeroMemory(mymemory, dwSize); // original VirtualAlloc does this (if..)
   return mymemory;
 }
@@ -76,8 +73,8 @@ bool VirtualFree(LPVOID lpAddress, size_t dwSize, unsigned int dwFreeType)
 // make all chars in buffer lowercase
 unsigned int CharLowerBuff(LPTSTR lpsz, unsigned int cchLength)
 {
-  if (lpsz)
-    for (; *lpsz; lpsz++)
+  if (lpsz != nullptr)
+    for (; *lpsz != 0; lpsz++)
       *lpsz = tolower(*lpsz);
   return 1;
 

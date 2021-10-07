@@ -35,11 +35,11 @@ LPVOID VirtualAlloc(LPVOID lpAddress, size_t dwSize, unsigned int flAllocationTy
 bool VirtualFree(LPVOID lpAddress, size_t dwSize, unsigned int dwFreeType);
 
 static inline bool IsCharLower(char ch) {
-  return isascii(ch) && islower(ch);
+  return (isascii(ch) != 0) && (islower(ch) != 0);
 }
 
 static inline bool IsCharUpper(char ch) {
-  return isascii(ch) && isupper(ch);
+  return (isascii(ch) != 0) && (isupper(ch) != 0);
 }
 
 unsigned int CharLowerBuff(LPTSTR lpsz, unsigned int cchLength);

@@ -97,16 +97,12 @@
 	// ascii markup
 	inline bool ConsoleColor_IsCharMeta( unsigned char c )
 	{
-		if (CONSOLE_COLOR_ESCAPE_CHAR == c)
-			return true;
-		return false;
+		return CONSOLE_COLOR_ESCAPE_CHAR == c;
 	}
 
 	inline bool ConsoleColor_IsCharColor( unsigned char c )
 	{
-		if ((c >= '0') && ((c - '0') < NUM_CONSOLE_COLORS))
-			return true;
-		return false;
+		return (c >= '0') && ((c - '0') < NUM_CONSOLE_COLORS);
 	}
 
 	// Console "Native" Chars
@@ -142,9 +138,7 @@
 	//
 	inline bool ConsoleColor_IsColorOrMouse( conchar_t g )
 	{
-		if (g > _CONSOLE_COLOR_MASK)
-			return true;
-		return false;
+		return g > _CONSOLE_COLOR_MASK;
 	}
 
 	inline bool ConsoleColor_IsColor( conchar_t g )

@@ -473,10 +473,7 @@ bool CanDrawDebugger()
 		return false;
 #endif
 
-	if ((g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING))
-		return true;
-
-	return false;
+	return (g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING);
 }
 
 
@@ -2521,7 +2518,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 	// 0 = RAM
 	// 1 = Bank 1
 	// 2 = Bank 2
-	bool bBankWritable = (GetMemMode() & MF_HRAM_WRITE) ? 1 : 0;
+	bool bBankWritable = (GetMemMode() & MF_HRAM_WRITE) != 0;
 	int iBankActive    = (GetMemMode() & MF_HIGHRAM)
 		? (GetMemMode() & MF_HRAM_BANK2)
 			? 2
@@ -2635,8 +2632,8 @@ void _DrawSoftSwitchMainAuxBanks( RECT & rect, int bg_default = BG_INFO )
 	int dx = 7 * w;
 
 	int  nAddress  = 0xC002;
-	bool bMainRead = (GetMemMode() & MF_AUXREAD)  ? true : false;
-	bool bAuxWrite = (GetMemMode() & MF_AUXWRITE) ? true : false;
+	bool bMainRead = (GetMemMode() & MF_AUXREAD) != 0;
+	bool bAuxWrite = (GetMemMode() & MF_AUXWRITE) != 0;
 
 	temp.right = rect.left + dx;
 	_DrawSoftSwitch( temp, nAddress, !bMainRead, "R", "m", "x", NULL, BG_DATA_2 );

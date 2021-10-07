@@ -133,7 +133,7 @@ unsigned char C6821::Read(unsigned char byRS)
         // CA2 is configured as output and in read strobe mode
         if (C2_OUTPUT(m_byCTLA) && C2_STROBE_MODE(m_byCTLA)) {
           // this will cause a transition low; call the output function if we're currently high
-          if (m_byOCA2)
+          if (m_byOCA2 != 0u)
             PIA_W_CALLBACK(m_stOutCA2, 0);
           m_byOCA2 = 0;
 
@@ -205,7 +205,7 @@ void C6821::Write(unsigned char byRS, unsigned char byData)
         m_byOA = byData;
 
         // send it to the output function
-        if (m_byDDRA)
+        if (m_byDDRA != 0u)
           PIA_W_CALLBACK(m_stOutA, m_byOA & m_byDDRA);
       }
 
@@ -215,7 +215,7 @@ void C6821::Write(unsigned char byRS, unsigned char byData)
           m_byDDRA = byData;
 
           // send it to the output function
-          if (m_byDDRA)
+          if (m_byDDRA != 0u)
             PIA_W_CALLBACK(m_stOutA, m_byOA & m_byDDRA);
         }
       }
@@ -230,13 +230,13 @@ void C6821::Write(unsigned char byRS, unsigned char byData)
         m_byOB = byData;
 
         // send it to the output function
-        if (m_byDDRB)
+        if (m_byDDRB != 0u)
           PIA_W_CALLBACK(m_stOutB, m_byOB & m_byDDRB);
 
         // CB2 is configured as output and in write strobe mode
         if (C2_OUTPUT(m_byCTLB) && C2_STROBE_MODE(m_byCTLB)) {
           // this will cause a transition low; call the output function if we're currently high
-          if (m_byOCB2)
+          if (m_byOCB2 != 0u)
             PIA_W_CALLBACK(m_stOutCB2, 0);
           m_byOCB2 = 0;
 
@@ -253,7 +253,7 @@ void C6821::Write(unsigned char byRS, unsigned char byData)
           m_byDDRB = byData;
 
           // send it to the output function
-          if (m_byDDRB)
+          if (m_byDDRB != 0u)
             PIA_W_CALLBACK(m_stOutB, m_byOB & m_byDDRB);
         }
       }
@@ -270,7 +270,7 @@ void C6821::Write(unsigned char byRS, unsigned char byData)
         int temp = SET_C2(byData) ? 1 : 0;
 
         // if this creates a transition, call the CA2 output function
-        if (m_byOCA2 ^ temp)
+        if ((m_byOCA2 ^ temp) != 0)
           PIA_W_CALLBACK(m_stOutCA2, temp);
 
         // set the new value
@@ -297,7 +297,7 @@ void C6821::Write(unsigned char byRS, unsigned char byData)
         int temp = SET_C2(byData) ? 1 : 0;
 
         // if this creates a transition, call the CA2 output function
-        if (m_byOCB2 ^ temp)
+        if ((m_byOCB2 ^ temp) != 0)
           PIA_W_CALLBACK(m_stOutCB2, temp);
 
         // set the new value
@@ -362,12 +362,12 @@ void C6821::UpdateInterrupts()
 
 void C6821::SetCA1(unsigned char byData)
 {
-  byData = byData ? 1 : 0;
+  byData = byData != 0u ? 1 : 0;
 
   // the new state has caused a transition
-  if (m_byCA1 ^ byData) {
+  if ((m_byCA1 ^ byData) != 0) {
     // handle the active transition
-    if ((byData && C1_LOW_TO_HIGH(m_byCTLA)) || (!byData && C1_HIGH_TO_LOW(m_byCTLA))) {
+    if (((byData != 0u) && C1_LOW_TO_HIGH(m_byCTLA)) || ((byData == 0u) && C1_HIGH_TO_LOW(m_byCTLA))) {
       // mark the IRQ
       SET_IRQ1(m_byCTLA);
 
@@ -377,7 +377,7 @@ void C6821::SetCA1(unsigned char byData)
       // CA2 is configured as output and in read strobe mode and cleared by a CA1 transition
       if (C2_OUTPUT(m_byCTLA) && C2_STROBE_MODE(m_byCTLA) && STROBE_C1_RESET(m_byCTLA)) {
         // call the CA2 output function
-        if (!m_byOCA2)
+        if (m_byOCA2 == 0u)
           PIA_W_CALLBACK(m_stOutCA2, 1);
 
         // clear CA2
@@ -392,14 +392,14 @@ void C6821::SetCA1(unsigned char byData)
 
 void C6821::SetCA2(unsigned char byData)
 {
-  byData = byData ? 1 : 0;
+  byData = byData != 0u ? 1 : 0;
 
   // CA2 is in input mode
   if (C2_INPUT(m_byCTLA)) {
     // the new state has caused a transition
-    if (m_byICA2 ^ byData) {
+    if ((m_byICA2 ^ byData) != 0) {
       // handle the active transition
-      if ((byData && C2_LOW_TO_HIGH(m_byCTLA)) || (!byData && C2_HIGH_TO_LOW(m_byCTLA))) {
+      if (((byData != 0u) && C2_LOW_TO_HIGH(m_byCTLA)) || ((byData == 0u) && C2_HIGH_TO_LOW(m_byCTLA))) {
         // mark the IRQ
         SET_IRQ2(m_byCTLA);
 
@@ -415,12 +415,12 @@ void C6821::SetCA2(unsigned char byData)
 
 void C6821::SetCB1(unsigned char byData)
 {
-  byData = byData ? 1 : 0;
+  byData = byData != 0u ? 1 : 0;
 
   // the new state has caused a transition
-  if (m_byCB1 ^ byData) {
+  if ((m_byCB1 ^ byData) != 0) {
     // handle the active transition
-    if ((byData && C1_LOW_TO_HIGH(m_byCTLB)) || (!byData && C1_HIGH_TO_LOW(m_byCTLB))) {
+    if (((byData != 0u) && C1_LOW_TO_HIGH(m_byCTLB)) || ((byData == 0u) && C1_HIGH_TO_LOW(m_byCTLB))) {
       // mark the IRQ
       SET_IRQ1(m_byCTLB);
 
@@ -432,7 +432,7 @@ void C6821::SetCB1(unsigned char byData)
         // the IRQ1 flag must have also been cleared
         if (!IRQ1(m_byCTLB)) {
           // call the CB2 output function
-          if (!m_byOCB2)
+          if (m_byOCB2 == 0u)
             PIA_W_CALLBACK(m_stOutCB2, 1);
 
           // clear CB2
@@ -449,14 +449,14 @@ void C6821::SetCB1(unsigned char byData)
 
 void C6821::SetCB2(unsigned char byData)
 {
-  byData = byData ? 1 : 0;
+  byData = byData != 0u ? 1 : 0;
 
   // CA2 is in input mode
   if (C2_INPUT(m_byCTLB)) {
     // the new state has caused a transition
-    if (m_byICB2 ^ byData) {
+    if ((m_byICB2 ^ byData) != 0) {
       // handle the active transition
-      if ((byData && C2_LOW_TO_HIGH(m_byCTLB)) || (!byData && C2_HIGH_TO_LOW(m_byCTLB))) {
+      if (((byData != 0u) && C2_LOW_TO_HIGH(m_byCTLB)) || ((byData == 0u) && C2_HIGH_TO_LOW(m_byCTLB))) {
         // mark the IRQ
         SET_IRQ2(m_byCTLB);
 

@@ -107,7 +107,7 @@ static POINT keyvalue[9] = {{PDL_SMIN,     PDL_SMAX},
 
 
 static unsigned int buttonlatch[3] = {0, 0, 0};
-static bool joybutton[3] = {0, 0, 0};
+static bool joybutton[3] = {false, false, false};
 
 static int joyshrx[2] = {8, 8};
 static int joyshry[2] = {8, 8};
@@ -116,7 +116,7 @@ static int joysuby[2] = {0, 0};
 
 unsigned int joytype[2] = {DEVICE_JOYSTICK, DEVICE_NONE};  // Emulation Type for joysticks #0 & #1
 
-static bool setbutton[3] = {0, 0, 0}; // Used when a mouse button is pressed/released
+static bool setbutton[3] = {false, false, false}; // Used when a mouse button is pressed/released
 
 static int xpos[2] = {PDL_CENTRAL, PDL_CENTRAL};
 static int ypos[2] = {PDL_CENTRAL, PDL_CENTRAL};
@@ -138,22 +138,18 @@ unsigned int joy2axis1 = 1;
 unsigned int joyexitenable = 0;
 unsigned int joyexitbutton0 = 8;
 unsigned int joyexitbutton1 = 9;
-bool joyquitevent = 0;
+bool joyquitevent = false;
 
 SDL_Joystick *joy1 = NULL;
 SDL_Joystick *joy2 = NULL;
 
 void CheckJoyExit() {
   SDL_JoystickUpdate(); // update all joysticks states
-  if (SDL_JoystickGetButton(joy1, joyexitbutton0) && SDL_JoystickGetButton(joy1, joyexitbutton1)) {
-    joyquitevent = true;
-  } else {
-    joyquitevent = false;
-  }
+  joyquitevent = SDL_JoystickGetButton(joy1, joyexitbutton0) && SDL_JoystickGetButton(joy1, joyexitbutton1);
 }
 
 void CheckJoystick0() {
-  if (!joy1) {
+  if (joy1 == nullptr) {
     return;
   }
   static unsigned int lastcheck = 0;
@@ -161,18 +157,18 @@ void CheckJoystick0() {
   if ((currtime - lastcheck >= 10) || joybutton[0] || joybutton[1]) {
     lastcheck = currtime;
     SDL_JoystickUpdate(); // update all joysticks states
-    if ((SDL_JoystickGetButton(joy1, joy1button1)) && !joybutton[0]) {
+    if (((SDL_JoystickGetButton(joy1, joy1button1)) != 0u) && !joybutton[0]) {
       buttonlatch[0] = BUTTONTIME;
     }
-    if ((SDL_JoystickGetButton(joy1, joy1button2)) && !joybutton[1] &&
+    if (((SDL_JoystickGetButton(joy1, joy1button2)) != 0u) && !joybutton[1] &&
         (joyinfo[joytype[1]].device == DEVICE_NONE)  // Only consider 2nd button if NOT emulating a 2nd Apple joystick
       ) {
       buttonlatch[1] = BUTTONTIME;
     }
-    joybutton[0] = SDL_JoystickGetButton(joy1, joy1button1);
+    joybutton[0] = (SDL_JoystickGetButton(joy1, joy1button1) != 0u);
     if (joyinfo[joytype[1]].device ==
         DEVICE_NONE) { // Only consider 2nd button if NOT emulating a 2nd Apple joystick button
-      joybutton[1] = SDL_JoystickGetButton(joy1, joy1button2);
+      joybutton[1] = (SDL_JoystickGetButton(joy1, joy1button2) != 0u);
     }
 
     xpos[0] = (SDL_JoystickGetAxis(joy1, joy1axis0) - joysubx[0]) >> joyshrx[0];
@@ -246,7 +242,7 @@ void CheckJoystick0() {
 }
 
 void CheckJoystick1() {
-  if (!joy2) {
+  if (joy2 == nullptr) {
     return;
   }
   static unsigned int lastcheck = 0;
@@ -254,16 +250,16 @@ void CheckJoystick1() {
   if ((currtime - lastcheck >= 10) || joybutton[2]) {
     lastcheck = currtime;
     SDL_JoystickUpdate(); // update all joysticks states
-    if (SDL_JoystickGetButton(joy2, joy2button1) && !joybutton[2]) {
+    if ((SDL_JoystickGetButton(joy2, joy2button1) != 0u) && !joybutton[2]) {
       buttonlatch[2] = BUTTONTIME;
       if (joyinfo[joytype[1]].device != DEVICE_NONE) {
         buttonlatch[1] = BUTTONTIME;  // Re-map this button when emulating a 2nd Apple joystick
       }
     }
-    joybutton[2] = SDL_JoystickGetButton(joy2, joy2button1);
+    joybutton[2] = (SDL_JoystickGetButton(joy2, joy2button1) != 0u);
 
     if (joyinfo[joytype[1]].device != DEVICE_NONE) {
-      joybutton[1] = SDL_JoystickGetButton(joy2, joy2button1); // Re-map this button when emulating a 2nd Apple joystick
+      joybutton[1] = (SDL_JoystickGetButton(joy2, joy2button1) != 0u); // Re-map this button when emulating a 2nd Apple joystick
     }
 
     xpos[1] = (SDL_JoystickGetAxis(joy2, joy2axis0) - joysubx[1]) >> joyshrx[1];
@@ -283,10 +279,10 @@ void CheckJoystick1() {
 
 void JoyShutDown() {
   // First of all, let's close all existing SDL joysticks
-  if (joy1) {
+  if (joy1 != nullptr) {
     SDL_JoystickClose(joy1);
   }
-  if (joy2) {
+  if (joy2 != nullptr) {
     SDL_JoystickClose(joy2);
   }
 }
@@ -301,10 +297,10 @@ void JoyInitialize()
   #define AXIS_MAX        32767   /* maximum value for axis coordinate */
 
   // First of all, let's close all existing SDL joysticks
-  if (joy1) {
+  if (joy1 != nullptr) {
     SDL_JoystickClose(joy1);
   }
-  if (joy2) {
+  if (joy2 != nullptr) {
     SDL_JoystickClose(joy2);
   }
   int number_of_joysticks = SDL_NumJoysticks();
@@ -470,7 +466,7 @@ bool JoyProcessKey(int virtkey, bool extended, bool down, bool autorep) {
           keydown[10] = down;
           break;  // Button #1
         default:
-          keychange = 0;
+          keychange = false;
           break;
       }
     }
@@ -518,10 +514,10 @@ bool JoyProcessKey(int virtkey, bool extended, bool down, bool autorep) {
 
       int corner_override_idx = -1;
       int corner_idx =
-          ((int)(0==keydown[1] /*"2"*/))
-        | ((int)(0==keydown[3] /*"4"*/)<<1)
-        | ((int)(0==keydown[5] /*"6"*/)<<2)
-        | ((int)(0==keydown[7])/*"8"*/<<3);
+          ((int)(0==static_cast<int>(keydown[1]) /*"2"*/))
+        | ((int)(0==static_cast<int>(keydown[3]) /*"4"*/)<<1)
+        | ((int)(0==static_cast<int>(keydown[5]) /*"6"*/)<<2)
+        | ((int)(0==static_cast<int>(keydown[7]))/*"8"*/<<3);
       if ((corner_override_idx = corner_convert_lookup[corner_idx]) >= 0) {
         xsum = keyvalue[corner_override_idx].x;
         ysum = keyvalue[corner_override_idx].y;
@@ -537,7 +533,7 @@ bool JoyProcessKey(int virtkey, bool extended, bool down, bool autorep) {
           key_idx++;
         }
       }
-      if (keydown_count) {
+      if (keydown_count != 0) {
         // Get the x mean from the sum
         xpos[nJoyNum] = (xsum / keydown_count) + PDL_CENTRAL + g_nPdlTrimX;
         ypos[nJoyNum] = (ysum / keydown_count) + PDL_CENTRAL + g_nPdlTrimY;
@@ -563,18 +559,18 @@ unsigned char JoyReadButton(unsigned short, unsigned short address, unsigned cha
     CheckJoystick1();
   }
 
-  bool pressed = 0;
+  bool pressed = false;
   switch (address) {
 
     case 0x61:
-      pressed = (buttonlatch[0] || joybutton[0] || setbutton[0] || keydown[JK_OPENAPPLE]);
+      pressed = ((buttonlatch[0] != 0u) || joybutton[0] || setbutton[0] || keydown[JK_OPENAPPLE]);
       if (joyinfo[joytype[1]].device != DEVICE_KEYBOARD)
         pressed = (pressed || keydown[JK_BUTTON0]);
       buttonlatch[0] = 0;
       break;
 
     case 0x62:
-      pressed = (buttonlatch[1] || joybutton[1] || setbutton[1] || keydown[JK_CLOSEDAPPLE]);
+      pressed = ((buttonlatch[1] != 0u) || joybutton[1] || setbutton[1] || keydown[JK_CLOSEDAPPLE]);
       if (joyinfo[joytype[1]].device != DEVICE_KEYBOARD)
         pressed = (pressed || keydown[JK_BUTTON1]);
       buttonlatch[1] = 0;
@@ -582,12 +578,12 @@ unsigned char JoyReadButton(unsigned short, unsigned short address, unsigned cha
 
     case 0x63:
       KeybUpdateCtrlShiftStatus();
-      pressed = (buttonlatch[2] || joybutton[2] || setbutton[2] || (g_bShiftKey));// SHIFT is PRESSED
+      pressed = ((buttonlatch[2] != 0u) || joybutton[2] || setbutton[2] || (g_bShiftKey));// SHIFT is PRESSED
       buttonlatch[2] = 0;
       break;
 
   }
-  return MemReadFloatingBus(pressed, nCyclesLeft);
+  return MemReadFloatingBus(static_cast<unsigned char>(pressed), nCyclesLeft);
 }
 
 // PREAD:    ; $FB1E
@@ -607,11 +603,11 @@ unsigned char JoyReadButton(unsigned short, unsigned short address, unsigned cha
 static const double PDL_CNTR_INTERVAL = 2816.0 / 255.0;  // 11.04 (From KEGS)
 
 unsigned char JoyReadPosition(unsigned short programcounter, unsigned short address, unsigned char, unsigned char, ULONG nCyclesLeft) {
-  int nJoyNum = (address & 2) ? 1 : 0;  // $C064..$C067
+  int nJoyNum = (address & 2) != 0 ? 1 : 0;  // $C064..$C067
 
   CpuCalcCycles(nCyclesLeft);
 
-  ULONG nPdlPos = (address & 1) ? ypos[nJoyNum] : xpos[nJoyNum];
+  ULONG nPdlPos = (address & 1) != 0 ? ypos[nJoyNum] : xpos[nJoyNum];
 
   // This is from KEGS. It helps games like Championship Lode Runner & Boulderdash
   // GPH: Taking this out.   It's illogical and this is an 8-bit emulator, not a IIGS
@@ -620,7 +616,7 @@ unsigned char JoyReadPosition(unsigned short programcounter, unsigned short addr
 
   bool nPdlCntrActive = (g_nCumulativeCycles <= (g_nJoyCntrResetCycle + (UINT64) ((double) nPdlPos * PDL_CNTR_INTERVAL)));
 
-  return MemReadFloatingBus(nPdlCntrActive, nCyclesLeft);
+  return MemReadFloatingBus(static_cast<unsigned char>(nPdlCntrActive), nCyclesLeft);
 }
 
 void JoyReset() {
@@ -657,9 +653,9 @@ void JoySetButton(eBUTTON number, eBUTTONSTATE down) {
     number = BUTTON1;  // 2nd joystick controls Apple button #1
   }
 
-  setbutton[number] = down;
+  setbutton[number] = (down != 0u);
 
-  if (down) {
+  if (down != 0u) {
     buttonlatch[number] = BUTTONTIME;
   }
 }
@@ -667,25 +663,25 @@ void JoySetButton(eBUTTON number, eBUTTONSTATE down) {
 // Set new joystick type
 bool JoySetEmulationType(unsigned int newType, int nJoystickNumber) {
   if (joytype[nJoystickNumber] == newType) {
-    return 1;  // Already set to this type. Return OK.
+    return true;  // Already set to this type. Return OK.
   }
 
   if (joyinfo[newType].device == DEVICE_JOYSTICK) {
     if (SDL_NumJoysticks() <= nJoystickNumber) {
       fprintf(stderr, "Can not find joystick #%d - disabling it\n", nJoystickNumber);
-      return 0;
+      return false;
     }
   } else if ((joyinfo[newType].device == DEVICE_MOUSE) && (joyinfo[joytype[nJoystickNumber]].device != DEVICE_MOUSE)) {
     if (sg_Mouse.Active()) {
       fprintf(stderr, "Mouse interface card is enabled - unable to use mouse for joystick emulation.\n");
-      return 0;
+      return false;
     }
     printf("To release mouse cursor, press Ctrl + left mouse button.\n");
   }
   joytype[nJoystickNumber] = newType;
   JoyInitialize();
   JoyReset();
-  return 1;
+  return true;
 }
 
 
@@ -697,13 +693,13 @@ void JoySetPosition(int xvalue, int xrange, int yvalue, int yrange) {
 }
 
 void JoyUpdatePosition() {
-  if (buttonlatch[0]) {
+  if (buttonlatch[0] != 0u) {
     --buttonlatch[0];
   }
-  if (buttonlatch[1]) {
+  if (buttonlatch[1] != 0u) {
     --buttonlatch[1];
   }
-  if (buttonlatch[2]) {
+  if (buttonlatch[2] != 0u) {
     --buttonlatch[2];
   }
 }

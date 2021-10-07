@@ -828,7 +828,7 @@ static inline void NMI(ULONG &uExecutedCycles, UINT16 &uExtraCycles, BOOL &flagc
 
 static inline void IRQ(ULONG &uExecutedCycles, UINT16 &uExtraCycles, BOOL &flagc, BOOL &flagn, BOOL &flagv, BOOL &flagz)
 {
-  if (g_bmIRQ && !(regs.ps & AF_INTERRUPT)) {
+  if ((g_bmIRQ != 0u) && ((regs.ps & AF_INTERRUPT) == 0)) {
     // IRQ signals are deasserted when a specific r/w operation is done on device
     g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
     PUSH(regs.pc >> 8)
@@ -3646,7 +3646,7 @@ void CpuSetupBenchmark()
         *(mem + addr++) = 0x4C;
         *(mem + addr++) = (opcode >= BENCHOPCODES) ? 0x00 : ((addr >> 4) + 1) << 4;
         *(mem + addr++) = 0x03;
-        while (addr & 0x0F) {
+        while ((addr & 0x0F) != 0) {
           ++addr;
         }
       }

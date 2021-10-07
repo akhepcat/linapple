@@ -70,10 +70,10 @@ static bool g_bAppActive = false;
 
 static int buttondown = -1;
 
-bool fullscreen = 0;
+bool fullscreen = false;
 bool g_WindowResized;  // if we do not have a normal window size
 
-static bool usingcursor = 0;
+static bool usingcursor = false;
 
 void DrawStatusArea(int drawflags);
 
@@ -100,7 +100,7 @@ void DrawFrameWindow()
   if (g_nAppMode == MODE_LOGO) {
     VideoDisplayLogo();
   } else if (g_nAppMode == MODE_DEBUG) {
-    DebugDisplay(1);
+    DebugDisplay(true);
   } else {
     VideoRedrawScreen(); // normal state - running emulator?
   }
@@ -119,10 +119,10 @@ void DrawStatusArea(int drawflags)
   Uint32 mybluez = SDL_MapRGB(screen->format, 10, 10, 255);  // bluez color, know that?
   SDL_SetColors(g_hStatusSurface, screen->format->palette->colors, 0, 256);
 
-  if (drawflags & DRAW_BACKGROUND) {
+  if ((drawflags & DRAW_BACKGROUND) != 0) {
     g_iStatusCycle = SHOW_CYCLES;  // start cycle for panel showing
   }
-  if (drawflags & DRAW_LEDS) {
+  if ((drawflags & DRAW_LEDS) != 0) {
     srect.x = 4;
     srect.y = 22;
     srect.w = STATUS_PANEL_W - 8;
@@ -147,7 +147,7 @@ void DrawStatusArea(int drawflags)
     leds[0] = LEDS + iHDDStatus;
     font_print(71, 23, leds, g_hStatusSurface, 4, 2.7);
 
-    if (iDrive1Status | iDrive2Status | iHDDStatus) {
+    if ((iDrive1Status | iDrive2Status | iHDDStatus) != 0) {
       g_iStatusCycle = SHOW_CYCLES;
     } // show status panel
   }
@@ -206,7 +206,7 @@ void FrameShowHelpScreen(int sx, int sy) // sx, sy - sizes of current window (sc
   } // Use screen, if none available
   my_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, tempSurface->w, tempSurface->h, tempSurface->format->BitsPerPixel, 0,
                                    0, 0, 0);
-  if (tempSurface->format->palette && my_screen->format->palette) {
+  if ((tempSurface->format->palette != nullptr) && (my_screen->format->palette != nullptr)) {
     SDL_SetColors(my_screen, tempSurface->format->palette->colors, 0, tempSurface->format->palette->ncolors);
   }
 
@@ -224,7 +224,7 @@ void FrameShowHelpScreen(int sx, int sy) // sx, sy - sizes of current window (sc
 
   int Help_TopX = int(45 * facy);
   for (int i = 3; i < MAX_LINES; i++) {
-    if (HelpStrings[i])
+    if (HelpStrings[i] != nullptr)
       font_print(4, Help_TopX + (i - 3) * 15 * facy, (char *) HelpStrings[i], screen, 1.5 * facx,
                1.5 * facy); // show keys
   }
@@ -265,7 +265,7 @@ void FrameQuickState(int num, int mod)
   char fpath[MAX_PATH];
   snprintf(fpath, MAX_PATH, "%.*s/SaveState%d.aws", int(strlen(g_sSaveStateDir)), g_sSaveStateDir, num); // prepare file name
   Snapshot_SetFilename(fpath);  // set it as a working name
-  if (mod & KMOD_SHIFT) {
+  if ((mod & KMOD_SHIFT) != 0) {
     Snapshot_SaveState();
   } else {
     Snapshot_LoadState();
@@ -293,7 +293,7 @@ void FrameDispatchMessage(SDL_Event *e) {// process given SDL event
         return;
       } else {
         // Define if we have resized window
-        g_WindowResized = (g_ScreenWidth != SCREEN_WIDTH) | (g_ScreenHeight != SCREEN_HEIGHT);
+        g_WindowResized = ((static_cast<int>(g_ScreenWidth != SCREEN_WIDTH) | static_cast<int>(g_ScreenHeight != SCREEN_HEIGHT)) != 0);
         printf("Screen size is %dx%d\n", g_ScreenWidth, g_ScreenHeight);
         if (g_WindowResized) {
           // create rects for screen stretching
@@ -310,17 +310,17 @@ void FrameDispatchMessage(SDL_Event *e) {// process given SDL event
       break;
 
     case SDL_ACTIVEEVENT:
-      g_bAppActive = e->active.gain; // if gain==1, app is active
+      g_bAppActive = (e->active.gain != 0u); // if gain==1, app is active
       break;
 
     case SDL_KEYDOWN:
-      if (mysym >= SDLK_0 && mysym <= SDLK_9 && mymod & KMOD_LCTRL) {
+      if (mysym >= SDLK_0 && mysym <= SDLK_9 && ((mymod & KMOD_LCTRL) != 0)) {
         FrameQuickState(mysym - SDLK_0, mymod);
         break;
       }
 
       if ((mysym >= SDLK_F1) && (mysym <= SDLK_F12) && (buttondown == -1)) {
-        SetUsingCursor(0);
+        SetUsingCursor(false);
         buttondown = mysym - SDLK_F1;  // special function keys processing
       } else if (mysym == SDLK_KP_PLUS) { // Gray + - speed up the emulator!
         g_dwSpeed = g_dwSpeed + 2;
@@ -342,7 +342,7 @@ void FrameDispatchMessage(SDL_Event *e) {// process given SDL event
       } else if (mysym == SDLK_CAPSLOCK) {
         KeybToggleCapsLock();
       } else if (mysym == SDLK_PAUSE) {
-        SetUsingCursor(0); // release cursor?
+        SetUsingCursor(false); // release cursor?
         switch (g_nAppMode) {
           case MODE_RUNNING: // go in pause
             g_nAppMode = MODE_PAUSED;
@@ -372,15 +372,15 @@ void FrameDispatchMessage(SDL_Event *e) {// process given SDL event
         // Note about Alt Gr (Right-Alt):
         // . WM_KEYDOWN[Left-Control], then:
         // . WM_KEYDOWN[Right-Alt]
-        bool autorep = 0; //previous key was pressed? 30bit of lparam
+        bool autorep = false; //previous key was pressed? 30bit of lparam
         bool extended = (mysym >= SDLK_UP); // 24bit of lparam - is an extended key, what is it???
-        if (mymod & KMOD_RCTRL)     // GPH: Update trim?
+        if ((mymod & KMOD_RCTRL) != 0)     // GPH: Update trim?
         {
           JoyUpdateTrimViaKey(mysym);
         } else {
           // Regular joystick movement
           if ((!JoyProcessKey(mysym, extended, true, autorep)) && (g_nAppMode != MODE_LOGO)) {
-            KeybQueueKeypress(mysym, NOT_ASCII);
+            KeybQueueKeypress(mysym, NOT_ASCII != 0u);
           }
         }
       } else if (g_nAppMode == MODE_DEBUG) {
@@ -408,8 +408,8 @@ void FrameDispatchMessage(SDL_Event *e) {// process given SDL event
         // (http://sdl.beuc.net/sdl.wiki/SDL_KeyboardEvent)
         KeybToggleCapsLock();
       } else {  // Need to know what "extended" means, and what's so special about SDLK_UP?
-        if (myscancode) { // GPH: Checking scan codes tells us if a key was REALLY released.
-          JoyProcessKey(mysym, (mysym >= SDLK_UP && mysym <= SDLK_LEFT), false, 0);
+        if (myscancode != 0) { // GPH: Checking scan codes tells us if a key was REALLY released.
+          JoyProcessKey(mysym, (mysym >= SDLK_UP && mysym <= SDLK_LEFT), false, false);
         }
       }
       break;
@@ -424,8 +424,8 @@ void FrameDispatchMessage(SDL_Event *e) {// process given SDL event
           else
           if (usingcursor) {
             KeybUpdateCtrlShiftStatus(); // if either of ALT, SHIFT or CTRL is pressed
-            if (g_bShiftKey | g_bCtrlKey) {
-              SetUsingCursor(0); // release mouse cursor for user
+            if ( (static_cast<int>(g_bShiftKey) | static_cast<int>(g_bCtrlKey)) != 0) {
+              SetUsingCursor(false); // release mouse cursor for user
             } else {
               if (sg_Mouse.Active()) {
                 sg_Mouse.SetButton(BUTTON0, BUTTON_DOWN);
@@ -437,7 +437,7 @@ void FrameDispatchMessage(SDL_Event *e) {// process given SDL event
           else
           if ((((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))) ||
               (sg_Mouse.Active())) {
-            SetUsingCursor(1); // capture cursor
+            SetUsingCursor(true); // capture cursor
           }
         }
       } // If left mouse button down
@@ -508,7 +508,7 @@ bool PSP_SaveStateSelectImage(bool saveit)
   fullPath = g_sSaveStateDir;  // global var for disk selecting directory
 
   while (isDirectory) {
-    if (!ChooseAnImage(g_ScreenWidth, g_ScreenHeight, fullPath, saveit,
+    if (!ChooseAnImage(g_ScreenWidth, g_ScreenHeight, fullPath, static_cast<int>(saveit),
                        filename, isDirectory, fileIndex)) {
       DrawFrameWindow();
       return false;  // if ESC was pressed, just leave
@@ -535,14 +535,14 @@ bool PSP_SaveStateSelectImage(bool saveit)
     }
   }
   _l_strcpy(g_sSaveStateDir, fullPath.c_str());
-  RegSaveString(TEXT("Preferences"), REGVALUE_PREF_SAVESTATE_DIR, 1, g_sSaveStateDir); // Save it
+  RegSaveString(TEXT("Preferences"), REGVALUE_PREF_SAVESTATE_DIR, true, g_sSaveStateDir); // Save it
 
   backdx = fileIndex; // Store cursor position
 
   fullPath += "/" + filename;
 
   Snapshot_SetFilename(fullPath.c_str()); // Set name for snapshot
-  RegSaveString(TEXT("Preferences"), REGVALUE_SAVESTATE_FILENAME, 1, fullPath.c_str()); // Save it
+  RegSaveString(TEXT("Preferences"), REGVALUE_SAVESTATE_FILENAME, true, fullPath.c_str()); // Save it
   DrawFrameWindow();
   return true;
 }
@@ -556,7 +556,7 @@ void FrameSaveBMP(void) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-truncation"
   snprintf(bmpName, 20, "linapple%7d.bmp", i);
-  while (!stat(bmpName, &bufp)) { // Find first absent file
+  while (stat(bmpName, &bufp) == 0) { // Find first absent file
     i++;
     snprintf(bmpName, 20, "linapple%7d.bmp", i);
   }
@@ -594,8 +594,8 @@ void ProcessButtonClick(int button, int mod)
         DrawStatusArea(DRAW_TITLE);
         VideoRedrawScreen();
         g_bResetTiming = true;
-      } else if (mod & KMOD_SHIFT) {
-        restart = 1;  // Keep up flag of restarting
+      } else if ((mod & KMOD_SHIFT) != 0) {
+        restart = true;  // Keep up flag of restarting
         qe.type = SDL_QUIT;
         SDL_PushEvent(&qe); // Push quit event
       }
@@ -604,14 +604,14 @@ void ProcessButtonClick(int button, int mod)
     case BTN_DRIVE1:
     case BTN_DRIVE2:
       JoyReset();
-      if (mod & KMOD_SHIFT) {
-        if (mod & KMOD_ALT) {
+      if ((mod & KMOD_SHIFT) != 0) {
+        if ((mod & KMOD_ALT) != 0) {
           HD_FTP_Select(button - BTN_DRIVE1);// select HDV image through FTP
         } else {
           HD_Select(button - BTN_DRIVE1);
         }  // select HDV image from local disk
       } else {
-        if (mod & KMOD_ALT) {
+        if ((mod & KMOD_ALT) != 0) {
           Disk_FTP_SelectImage(button - BTN_DRIVE1);//select through FTP
         } else {
           DiskSelect(button - BTN_DRIVE1);
@@ -624,7 +624,7 @@ void ProcessButtonClick(int button, int mod)
       break;
 
     case BTN_FULLSCR:  // F6 - Fullscreen on/off
-      if (mod & KMOD_SHIFT) {
+      if ((mod & KMOD_SHIFT) != 0) {
          // only IIe and enhanced have a keyboard rocker switch (and only non-US keyboards)
          if ((g_KeyboardLanguage != English_US)&&
              ((g_Apple2Type == A2TYPE_APPLE2E)||(g_Apple2Type == A2TYPE_APPLE2EEHANCED)))
@@ -636,10 +636,10 @@ void ProcessButtonClick(int button, int mod)
       else
       {
         if (fullscreen) {
-          fullscreen = 0;
+          fullscreen = false;
           SetNormalMode();
         } else {
-          fullscreen = 1;
+          fullscreen = true;
           SetFullScreenMode();
         }
         JoyReset();   // GPH: Sometimes lose ability to use buttons after switch
@@ -650,7 +650,7 @@ void ProcessButtonClick(int button, int mod)
       if (g_nAppMode != MODE_DEBUG)
       {
         DebugBegin();
-        SetUsingCursor(0);
+        SetUsingCursor(false);
       }
       else
       if (g_nAppMode == MODE_DEBUG)
@@ -664,10 +664,10 @@ void ProcessButtonClick(int button, int mod)
       // Now Shift-F8 save settings changed run-tme in linapple.conf
       // F8 - save current screen as a .bmp file
       // Currently these setting are just next:
-      if (mod & KMOD_SHIFT) {
-        RegSaveValue(TEXT("Configuration"), TEXT("Video Emulation"), 1, g_videotype);
-        RegSaveValue(TEXT("Configuration"), TEXT("Emulation Speed"), 1, g_dwSpeed);
-        RegSaveValue(TEXT("Configuration"), TEXT("Fullscreen"), 1, fullscreen);
+      if ((mod & KMOD_SHIFT) != 0) {
+        RegSaveValue(TEXT("Configuration"), TEXT("Video Emulation"), true, g_videotype);
+        RegSaveValue(TEXT("Configuration"), TEXT("Emulation Speed"), true, g_dwSpeed);
+        RegSaveValue(TEXT("Configuration"), TEXT("Fullscreen"), true, static_cast<unsigned int>(fullscreen));
       } else {
         FrameSaveBMP();
       }
@@ -676,7 +676,7 @@ void ProcessButtonClick(int button, int mod)
 
     // Buttons handlers for F9 - F12
     case BTN_CYCLE: // F9 - CYCLE through allowed video modes
-      if (mod & KMOD_SHIFT) {
+      if ((mod & KMOD_SHIFT) != 0) {
         // GPH Added budget video for updating only every 12 60Hz frames.
         // This is because, on computers without a fast GPU, the drawing of the screen
         // can actually affect the audio.
@@ -708,14 +708,14 @@ void ProcessButtonClick(int button, int mod)
       SDL_PushEvent(&qe); // Push quit event
       break;  //
     case BTN_SAVEST: // Save state (F11)
-      if (mod & KMOD_ALT) { // quick save
+      if ((mod & KMOD_ALT) != 0) { // quick save
         Snapshot_SaveState();
       } else if (PSP_SaveStateSelectImage(true)) {
         Snapshot_SaveState();
       }
       break;
     case BTN_LOADST: // Load state (F12) or Hot Reset (Ctrl+F12)
-      if (mod & KMOD_CTRL) {
+      if ((mod & KMOD_CTRL) != 0) {
         if (!IS_APPLE2) {
           MemResetPaging();
         }
@@ -727,7 +727,7 @@ void ProcessButtonClick(int button, int mod)
         }  // Switch Alternate char set off
         MB_Reset();
         CpuReset();
-      } else if (mod & KMOD_ALT) { // quick load state
+      } else if ((mod & KMOD_ALT) != 0) { // quick load state
         Snapshot_LoadState();
       } else if (PSP_SaveStateSelectImage(false)) {
         Snapshot_LoadState();
@@ -742,7 +742,7 @@ void ProcessButtonClick(int button, int mod)
 
 void ResetMachineState() {
   DiskReset();    // Set floppymotoron=0
-  g_bFullSpeed = 0;  // Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
+  g_bFullSpeed = false;  // Might've hit reset in middle of InternalCpuExecute() - so beep may get (partially) muted
 
   MemReset();
   DiskBoot();
@@ -768,7 +768,7 @@ void SetFullScreenMode() {
 void SetNormalMode()
 {
   if (bIamFullScreened) {
-    bIamFullScreened = 0;
+    bIamFullScreened = false;
     SDL_WM_ToggleFullScreen(screen);// we should go back anyway!? ^_^  --bb
     if (!usingcursor) {
       SDL_ShowCursor(SDL_ENABLE);
@@ -810,7 +810,7 @@ int FrameCreateWindow()
   }
 
   // define if we have resized window
-  g_WindowResized = (g_ScreenWidth != SCREEN_WIDTH) | (g_ScreenHeight != SCREEN_HEIGHT);
+  g_WindowResized = ((static_cast<int>(g_ScreenWidth != SCREEN_WIDTH) | static_cast<int>(g_ScreenHeight != SCREEN_HEIGHT)) != 0);
   printf("Screen size is %dx%d\n", g_ScreenWidth, g_ScreenHeight);
   if (g_WindowResized) {
     // create rects for screen stretching

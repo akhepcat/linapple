@@ -76,7 +76,7 @@ char *g_pAppTitle = TITLE_APPLE_2E_ENHANCED_;
 
 eApple2Type g_Apple2Type = A2TYPE_APPLE2EEHANCED;
 
-bool behind = 0;
+bool behind = false;
 unsigned int cumulativecycles = 0;      // Wraps after ~1hr 9mins
 unsigned int cyclenum = 0;
 unsigned int emulmsec = 0;
@@ -109,7 +109,7 @@ char g_sFTPServerHDD[MAX_PATH] = TEXT(""); // full path to default FTP server
 char g_sFTPUserPass[512] = TEXT("anonymous:mymail@hotmail.com"); // full login line
 
 bool g_bResetTiming = false;
-bool restart = 0;
+bool restart = false;
 
 // several parameters affecting the speed of emulated CPU
 unsigned int g_dwSpeed = SPEED_NORMAL;  // Affected by Config dialog's speed slider bar
@@ -216,12 +216,12 @@ void ContinueExecution()
 
   // Determine whether the screen was updated, the disk was spinning,
   // or the keyboard I/O ports were being excessively queried this clocktick
-  if (g_singlethreaded) {
-    VideoCheckPage(0);
+  if (g_singlethreaded != 0u) {
+    VideoCheckPage(false);
   }
   bool screenupdated = VideoHasRefreshed();
-  screenupdated |= (!g_singlethreaded);
-  bool systemidle = 0;
+  screenupdated |= (g_singlethreaded == 0u);
+  bool systemidle = false;
 
   if (g_dwCyclesThisFrame >= dwClksPerFrame) {
     g_dwCyclesThisFrame -= dwClksPerFrame;
@@ -229,19 +229,19 @@ void ContinueExecution()
     if (g_nAppMode != MODE_LOGO) {
       VideoUpdateFlash();
 
-      static bool anyupdates = 0;
-      static bool lastupdates[2] = {0, 0};
+      static bool anyupdates = false;
+      static bool lastupdates[2] = {false, false};
 
       anyupdates |= screenupdated;
-      bool update_clause = ((!anyupdates) && (!lastupdates[0]) && (!lastupdates[1])) || (!g_singlethreaded);
+      bool update_clause = ((!anyupdates) && (!lastupdates[0]) && (!lastupdates[1])) || (g_singlethreaded == 0u);
       if (update_clause && VideoApparentlyDirty()) {
-        VideoCheckPage(1);
+        VideoCheckPage(true);
         static unsigned int lasttime = 0;
         unsigned int currtime = GetTickCount();
         if ((!g_bFullSpeed) || (currtime - lasttime >= (unsigned int)((graphicsmode || !systemidle) ? 100 : 25))) {
           if (!g_bBudgetVideo || (currtime - lasttime >= 200)) {   // update every 12 frames
             VideoRefreshScreen();
-            if (!g_singlethreaded) {
+            if (g_singlethreaded == 0u) {
               // This tells the video to schedule a frame update now.
               // It will run in another thread, another core.
               VideoSetNextScheduledUpdate();
@@ -250,12 +250,12 @@ void ContinueExecution()
             lasttime = currtime;
           }
         }
-        screenupdated = 1;
+        screenupdated = true;
       }
 
       lastupdates[1] = lastupdates[0];
       lastupdates[0] = anyupdates;
-      anyupdates = 0;
+      anyupdates = false;
     }
     MB_EndOfVideoFrame();
   }
@@ -349,7 +349,7 @@ void EnterMessageLoop()
   while (true) {
     bool event_was_key_F4 = false;
 
-    if (SDL_PollEvent(&event)) {
+    if (SDL_PollEvent(&event) != 0) {
       if (event.type == SDL_QUIT && !event_was_key_F4) {
         return;
       }
@@ -358,7 +358,7 @@ void EnterMessageLoop()
       FrameDispatchMessage(&event);
 
       while ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING)) {
-        if (SDL_PollEvent(&event)) {
+        if (SDL_PollEvent(&event) != 0) {
           if (event.type == SDL_QUIT && !event_was_key_F4) {
             return;
           }
@@ -370,7 +370,7 @@ void EnterMessageLoop()
         } else {
           ContinueExecution();
           if (g_nAppMode != MODE_DEBUG) {
-            if (joyexitenable) {
+            if (joyexitenable != 0u) {
               CheckJoyExit();
               if (joyquitevent) {
                 return;
@@ -394,13 +394,13 @@ void EnterMessageLoop()
 
 int DoDiskInsert(int nDrive, LPSTR szFileName)
 {
-  return DiskInsert(nDrive, szFileName, 0, 0);
+  return DiskInsert(nDrive, szFileName, false, false);
 }
 
 bool ValidateDirectory(char *dir)
 {
   bool ret = false;
-  if (dir && *dir) {
+  if ((dir != nullptr) && (*dir != 0)) {
     struct stat st;
     if (stat("/tmp", &st) == 0) {
       if ((st.st_mode & S_IFDIR) != 0) {
@@ -408,18 +408,18 @@ bool ValidateDirectory(char *dir)
       }
     }
   }
-  printf("%s is dir? %d\n", dir, ret);
+  printf("%s is dir? %d\n", dir, static_cast<int>(ret));
   return ret;
 }
 
 void SetDiskImageDirectory(char *regKey, int driveNumber)
 {
   char *szHDFilename = NULL;
-  if (RegLoadString(TEXT("Configuration"), TEXT(regKey), 1, &szHDFilename, MAX_PATH)) {
+  if (RegLoadString(TEXT("Configuration"), TEXT(regKey), true, &szHDFilename, MAX_PATH)) {
     if (!ValidateDirectory(szHDFilename)) {
       free(szHDFilename);
-      RegSaveString(TEXT("Configuration"), TEXT(regKey), 1, "/");
-      RegLoadString(TEXT("Configuration"), TEXT(regKey), 1, &szHDFilename, MAX_PATH);
+      RegSaveString(TEXT("Configuration"), TEXT(regKey), true, "/");
+      RegLoadString(TEXT("Configuration"), TEXT(regKey), true, &szHDFilename, MAX_PATH);
     }
 
     DoDiskInsert(driveNumber, szHDFilename);
@@ -439,7 +439,7 @@ void setAutoBoot()
 // Let us load main configuration from config file.  Y_Y  --bb
 void LoadConfiguration()
 {
-  if (registry) {
+  if (registry != nullptr) {
     unsigned int dwComputerType = g_Apple2Type;
     LOAD(TEXT("Computer Emulation"), &dwComputerType);
 
@@ -478,7 +478,7 @@ void LoadConfiguration()
   }
   printf("Selected machine type: %s\n", g_pAppTitle);
 
-  if (registry) {
+  if (registry != nullptr) {
     LOAD(TEXT("Joystick 0"), &joytype[0]);
     LOAD(TEXT("Joystick 1"), &joytype[1]);
     LOAD(TEXT("Joy0Index"), &joy1index);
@@ -509,7 +509,7 @@ void LoadConfiguration()
   // default: use keyboard language according to environment
   {
     const char* pEnvLanguage = getenv("LANG");
-    if (pEnvLanguage)
+    if (pEnvLanguage != nullptr)
     {
       if (0 == strncmp(pEnvLanguage, "de", 2))
         g_KeyboardLanguage = German_DE;
@@ -523,7 +523,7 @@ void LoadConfiguration()
   }
 
   // check if configuration file contains specific keyboard language
-  if (registry)
+  if (registry != nullptr)
   {
     unsigned int Language = 0;
     if (LOAD(TEXT(REGVALUE_KEYB_TYPE), &Language)) {
@@ -569,16 +569,16 @@ void LoadConfiguration()
     }
   }
 
-  if (registry) {
+  if (registry != nullptr) {
     LOAD(TEXT("Sound Emulation"), &soundtype);
   }
   unsigned int dwSerialPort;
-  if (registry) {
+  if (registry != nullptr) {
     LOAD(TEXT("Serial Port"), &dwSerialPort);
   }
   sg_SSC.SetSerialPort(dwSerialPort);
 
-  if (registry) {
+  if (registry != nullptr) {
     LOAD(TEXT("Emulation Speed"), &g_dwSpeed);
     LOAD(TEXT("Enhance Disk Speed"), (unsigned int * ) & enhancedisk);
     LOAD(TEXT("Video Emulation"), &g_videotype);
@@ -587,50 +587,50 @@ void LoadConfiguration()
 
   unsigned int dwTmp = 0;  // temp var
 
-  if (registry) {
+  if (registry != nullptr) {
     LOAD(TEXT("Fullscreen"), &dwTmp);  // load fullscreen flag
   }
   fullscreen = (bool) dwTmp;
   dwTmp = 1;
-  if (registry) {
+  if (registry != nullptr) {
     LOAD(TEXT(REGVALUE_SHOW_LEDS), &dwTmp);  // load Show Leds flag
   }
   g_ShowLeds = (bool) dwTmp;
 
   SetCurrentCLK6502();  // set up real speed
 
-  if (registry) {
+  if (registry != nullptr) {
     if (LOAD(TEXT(REGVALUE_MOUSE_IN_SLOT4), &dwTmp)) {
-      g_uMouseInSlot4 = dwTmp;
+      g_uMouseInSlot4 = (dwTmp != 0u);
     }
   }
   g_Slot4 = g_uMouseInSlot4 ? CT_MouseInterface : CT_Mockingboard;
 
-  if (registry) {
+  if (registry != nullptr) {
     if (LOAD(TEXT(REGVALUE_SOUNDCARD_TYPE), &dwTmp)) {
       MB_SetSoundcardType((eSOUNDCARDTYPE) dwTmp);
     }
   }
 
-  if (registry) {
+  if (registry != nullptr) {
     if (LOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp)) {
       g_bSaveStateOnExit = (dwTmp != 0);
     }
   }
 
-  if (registry) {
+  if (registry != nullptr) {
     if (LOAD(TEXT(REGVALUE_PRINTER_APPEND), &dwTmp)) {
       g_bPrinterAppend = dwTmp != 0;
     }
   }
 
-  if (registry) {
+  if (registry != nullptr) {
     if (LOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp)) {
       hddenabled = (bool) dwTmp;
     }
   }
 
-  if (registry) {
+  if (registry != nullptr) {
     if (LOAD(TEXT(REGVALUE_CLOCK_SLOT), &clockslot)) {
       if (clockslot < 1 || clockslot > 7)
         clockslot = 0;
@@ -639,9 +639,9 @@ void LoadConfiguration()
 
   char *szHDFilename = NULL;
 
-  if (registry) {
-    if (RegLoadString(TEXT("Configuration"), TEXT("Monochrome Color"), 1, &szHDFilename, 10)) {
-      if (!sscanf(szHDFilename, "#%X", &monochrome)) {
+  if (registry != nullptr) {
+    if (RegLoadString(TEXT("Configuration"), TEXT("Monochrome Color"), true, &szHDFilename, 10)) {
+      if (sscanf(szHDFilename, "#%X", &monochrome) == 0) {
         monochrome = 0xC0C0C0;
       }
       free(szHDFilename);
@@ -650,20 +650,20 @@ void LoadConfiguration()
   }
 
   dwTmp = 0;
-  if (registry) {
+  if (registry != nullptr) {
     LOAD(TEXT("Boot at Startup"), &dwTmp);
   }
 
-  if (dwTmp) {
+  if (dwTmp != 0u) {
     // autostart
     setAutoBoot();
   }
 
   dwTmp = 0;
-  if (registry) {
+  if (registry != nullptr) {
     LOAD(TEXT("Slot 6 Autoload"), &dwTmp);  // load autoinsert for Slot 6 flag
   }
-  if (dwTmp) {
+  if (dwTmp != 0u) {
     // Load floppy disk images and insert it automatically in slot 6 drive 1 and 2
     static char szDiskImage1[] = REGVALUE_DISK_IMAGE1;
     SetDiskImageDirectory(szDiskImage1, 0);
@@ -673,16 +673,16 @@ void LoadConfiguration()
   }
 
   // Load hard disk images and insert it automatically in slot 7
-  if (registry) {
-    if (RegLoadString(TEXT("Configuration"), TEXT(REGVALUE_HDD_IMAGE1), 1, &szHDFilename, MAX_PATH)) {
+  if (registry != nullptr) {
+    if (RegLoadString(TEXT("Configuration"), TEXT(REGVALUE_HDD_IMAGE1), true, &szHDFilename, MAX_PATH)) {
       HD_InsertDisk2(0, szHDFilename);
       free(szHDFilename);
       szHDFilename = NULL;
     }
   }
 
-  if (registry) {
-    if (RegLoadString(TEXT("Configuration"), TEXT(REGVALUE_HDD_IMAGE2), 1, &szHDFilename, MAX_PATH)) {
+  if (registry != nullptr) {
+    if (RegLoadString(TEXT("Configuration"), TEXT(REGVALUE_HDD_IMAGE2), true, &szHDFilename, MAX_PATH)) {
       HD_InsertDisk2(1, szHDFilename);
       free(szHDFilename);
       szHDFilename = NULL;
@@ -690,8 +690,8 @@ void LoadConfiguration()
   }
 
   // file name for Parallel Printer
-  if (registry) {
-    if (RegLoadString(TEXT("Configuration"), TEXT(REGVALUE_PPRINTER_FILENAME), 1, &szHDFilename, MAX_PATH)) {
+  if (registry != nullptr) {
+    if (RegLoadString(TEXT("Configuration"), TEXT(REGVALUE_PPRINTER_FILENAME), true, &szHDFilename, MAX_PATH)) {
       if (strlen(szHDFilename) > 1) {
         strncpy(g_sParallelPrinterFile, szHDFilename, MAX_PATH);
       }
@@ -700,8 +700,8 @@ void LoadConfiguration()
     }
   }
 
-  if (registry) {
-    if (RegLoadValue(TEXT("Configuration"), TEXT(REGVALUE_PRINTER_IDLE_LIMIT), 1, &dwTmp)) {
+  if (registry != nullptr) {
+    if (RegLoadValue(TEXT("Configuration"), TEXT(REGVALUE_PRINTER_IDLE_LIMIT), true, &dwTmp)) {
       Printer_SetIdleLimit(dwTmp);
     }
   }
@@ -709,8 +709,8 @@ void LoadConfiguration()
   char *szFilename = NULL;
   double scrFactor = 0.0;
   // Define screen sizes
-  if (registry) {
-    if (RegLoadString(TEXT("Configuration"), TEXT("Screen factor"), 1, &szFilename, 16)) {
+  if (registry != nullptr) {
+    if (RegLoadString(TEXT("Configuration"), TEXT("Screen factor"), true, &szFilename, 16)) {
       scrFactor = atof(szFilename);
       if (scrFactor > 0.1) {
         g_ScreenWidth = (unsigned int)(g_ScreenWidth * scrFactor);
@@ -721,7 +721,7 @@ void LoadConfiguration()
     }
   }
 
-  if (registry) {
+  if (registry != nullptr) {
     if (scrFactor <= 0.1) {
       // Try to set Screen Width & Height directly
       dwTmp = 0;
@@ -737,8 +737,8 @@ void LoadConfiguration()
     }
   }
 
-  if (registry) {
-    if (RegLoadString(TEXT("Configuration"), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, &szFilename, MAX_PATH)) {
+  if (registry != nullptr) {
+    if (RegLoadString(TEXT("Configuration"), TEXT(REGVALUE_SAVESTATE_FILENAME), true, &szFilename, MAX_PATH)) {
       Snapshot_SetFilename(szFilename);  // If not in Registry than default will be used
       free(szFilename);
       szFilename = NULL;
@@ -746,11 +746,11 @@ void LoadConfiguration()
   }
 
   // Current/Starting Dir is the "root" of where the user keeps his disk images
-  if (registry) {
-    RegLoadString(TEXT("Preferences"), REGVALUE_PREF_START_DIR, 1, &szFilename, MAX_PATH);
+  if (registry != nullptr) {
+    RegLoadString(TEXT("Preferences"), REGVALUE_PREF_START_DIR, true, &szFilename, MAX_PATH);
   }
 
-  if (szFilename) {
+  if (szFilename != nullptr) {
     _l_strcpy(g_sCurrentDir, szFilename);
     free(szFilename);
     szFilename = NULL;
@@ -765,11 +765,11 @@ void LoadConfiguration()
   }
 
   // Load starting directory for HDV (Apple][ HDD) images
-  if (registry) {
-    RegLoadString(TEXT("Preferences"), REGVALUE_PREF_HDD_START_DIR, 1, &szFilename, MAX_PATH);
+  if (registry != nullptr) {
+    RegLoadString(TEXT("Preferences"), REGVALUE_PREF_HDD_START_DIR, true, &szFilename, MAX_PATH);
   }
 
-  if (szFilename) {
+  if (szFilename != nullptr) {
     _l_strcpy(g_sHDDDir, szFilename);
     free(szFilename);
     szFilename = NULL;
@@ -778,67 +778,67 @@ void LoadConfiguration()
   if (strlen(g_sHDDDir) == 0 || g_sHDDDir[0] != '/') {
     char *tmp = getenv("HOME"); /* we don't have HOME?  ^_^  0_0  $_$  */
     if (tmp == NULL) {
-      _l__l_strcpy(g_sHDDDir, "/");  //begin from the root, then
+      _l_strcpy(g_sHDDDir, "/");  //begin from the root, then
     } else {
-      _l__l_strcpy(g_sHDDDir, tmp);
+      _l_strcpy(g_sHDDDir, tmp);
     }
   }
 
   // Load starting directory for saving current states
-  if (registry) {
-    RegLoadString(TEXT("Preferences"), REGVALUE_PREF_SAVESTATE_DIR, 1, &szFilename, MAX_PATH);
+  if (registry != nullptr) {
+    RegLoadString(TEXT("Preferences"), REGVALUE_PREF_SAVESTATE_DIR, true, &szFilename, MAX_PATH);
   }
-  if (szFilename) {
-    _l__l_strcpy(g_sSaveStateDir, szFilename);
+  if (szFilename != nullptr) {
+    _l_strcpy(g_sSaveStateDir, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
   if (strlen(g_sSaveStateDir) == 0 || g_sSaveStateDir[0] != '/') {
     char *tmp = getenv("HOME"); /* we don't have HOME?  ^_^  0_0  $_$  */
     if (tmp == NULL) {
-      _l__l_strcpy(g_sSaveStateDir, "/");  //begin from the root, then
+      _l_strcpy(g_sSaveStateDir, "/");  //begin from the root, then
     } else {
-      _l__l_strcpy(g_sSaveStateDir, tmp);
+      _l_strcpy(g_sSaveStateDir, tmp);
     }
   }
 
   // Read and fill FTP variables - server, local dir, user name and password
-  if (registry) {
-    RegLoadString(TEXT("Preferences"), REGVALUE_FTP_DIR, 1, &szFilename, MAX_PATH);
+  if (registry != nullptr) {
+    RegLoadString(TEXT("Preferences"), REGVALUE_FTP_DIR, true, &szFilename, MAX_PATH);
   }
 
-  if (szFilename) {
-    _l__l_strcpy(g_sFTPServer, szFilename);
+  if (szFilename != nullptr) {
+    _l_strcpy(g_sFTPServer, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
 
-  if (registry) {
-    RegLoadString(TEXT("Preferences"), REGVALUE_FTP_HDD_DIR, 1, &szFilename, MAX_PATH);
+  if (registry != nullptr) {
+    RegLoadString(TEXT("Preferences"), REGVALUE_FTP_HDD_DIR, true, &szFilename, MAX_PATH);
   }
 
-  if (szFilename) {
-    _l__l_strcpy(g_sFTPServerHDD, szFilename);
+  if (szFilename != nullptr) {
+    _l_strcpy(g_sFTPServerHDD, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
 
-  if (registry) {
-    RegLoadString(TEXT("Preferences"), REGVALUE_FTP_LOCAL_DIR, 1, &szFilename, MAX_PATH);
+  if (registry != nullptr) {
+    RegLoadString(TEXT("Preferences"), REGVALUE_FTP_LOCAL_DIR, true, &szFilename, MAX_PATH);
   }
 
-  if (szFilename) {
-    _l__l_strcpy(g_sFTPLocalDir, szFilename);
+  if (szFilename != nullptr) {
+    _l_strcpy(g_sFTPLocalDir, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
 
-  if (registry) {
-    RegLoadString(TEXT("Preferences"), REGVALUE_FTP_USERPASS, 1, &szFilename, 512);
+  if (registry != nullptr) {
+    RegLoadString(TEXT("Preferences"), REGVALUE_FTP_USERPASS, true, &szFilename, 512);
   }
 
-  if (szFilename) {
-    _l__l_strcpy(g_sFTPUserPass, szFilename);
+  if (szFilename != nullptr) {
+    _l_strcpy(g_sFTPUserPass, szFilename);
     free(szFilename);
     szFilename = NULL;
   }
@@ -876,11 +876,11 @@ void LoadAllConfigurations(const char *userSpecifiedFilename)
   // Default values should be set, but some other globals that depend on them may not be.
   LoadConfiguration();
 
-  if (userSpecifiedFilename) {
+  if (userSpecifiedFilename != nullptr) {
     registry = fopen(userSpecifiedFilename, "r+");
-    if (!registry) {
+    if (registry == nullptr) {
       registry = fopen(userSpecifiedFilename, "w+");
-      if (!registry) {
+      if (registry == nullptr) {
         std::cerr << "WARNING! Failed to open config file: " << userSpecifiedFilename << std::endl;
         exit(EXIT_SUCCESS);
       }
@@ -894,7 +894,7 @@ void LoadAllConfigurations(const char *userSpecifiedFilename)
   // Try known system configuration paths.
   envvar = getenv("XDG_CONFIG_DIRS");
 
-  std::string xdgConfigDirs = envvar ? envvar : "";
+  std::string xdgConfigDirs = envvar != nullptr ? envvar : "";
   if (xdgConfigDirs.length() == 0) {
     xdgConfigDirs = "/etc/xdg";
   }
@@ -907,7 +907,7 @@ void LoadAllConfigurations(const char *userSpecifiedFilename)
   for (std::vector<std::string>::reverse_iterator it = sysConfigDirs.rbegin(); it != sysConfigDirs.rend(); it++) {
     std::string config = *it + "/linapple/linapple.conf";
     registry = fopen(config.c_str(), "r");
-    if (!registry) {
+    if (registry == nullptr) {
       continue;
     }
     LoadConfiguration();
@@ -919,14 +919,14 @@ void LoadAllConfigurations(const char *userSpecifiedFilename)
   char *home = getenv("HOME");
 
   envvar = getenv("XDG_CONFIG_HOME");
-  std::string xdgConfigHome = envvar ? envvar : "";
-  if (xdgConfigHome.length() == 0 && home) {
+  std::string xdgConfigHome = envvar != nullptr ? envvar : "";
+  if (xdgConfigHome.length() == 0 && (home != nullptr)) {
     xdgConfigHome = std::string(home) + "/.config";
   }
 
   std::vector <std::string> configFiles;
   configFiles.push_back(xdgConfigDirs + "/linapple/linapple.conf");
-  if (home) {
+  if (home != nullptr) {
     // Suppport old locations under HOME.
     configFiles.push_back(std::string(home) + "/linapple/linapple.conf");
     configFiles.push_back(std::string(home) + "/.linapple/linapple.conf");
@@ -936,7 +936,7 @@ void LoadAllConfigurations(const char *userSpecifiedFilename)
   std::string lastSuccessfulUserConfig;
   for (std::vector<std::string>::reverse_iterator it = configFiles.rbegin(); it != configFiles.rend(); it++) {
     registry = fopen((*it).c_str(), "r");
-    if (!registry) {
+    if (registry == nullptr) {
       continue;
     }
     lastSuccessfulUserConfig = *it;
@@ -1061,20 +1061,20 @@ int main(int argc, char *argv[])
 
       case 0:
         optname = longopts[optind].name;
-        if (!strcmp(optname, "autoboot")) {
+        if (strcmp(optname, "autoboot") == 0) {
           bBoot = true;
-        } else if (!strcmp(optname, "benchmark")) {
+        } else if (strcmp(optname, "benchmark") == 0) {
           bBenchMark = true;
-        } else if (!strcmp(optname, "conf")) {
+        } else if (strcmp(optname, "conf") == 0) {
           szConfigurationFile = optarg;
-        } else if (!strcmp(optname, "d1")) {
+        } else if (strcmp(optname, "d1") == 0) {
           szImageName_drive1 = optarg;
-        } else if (!strcmp(optname, "d2")) {
+        } else if (strcmp(optname, "d2") == 0) {
           szImageName_drive2 = optarg;
-        } else if (!strcmp(optname, "help")) {
+        } else if (strcmp(optname, "help") == 0) {
           PrintHelp();
           return 0;
-        } else if (!strcmp(optname, "state")) {
+        } else if (strcmp(optname, "state") == 0) {
           szSnapshotFile = optarg;
         } else {
           printf("Unknown option '%s'.\n\n", optname);
@@ -1105,14 +1105,14 @@ int main(int argc, char *argv[])
   // Initialize COM
   // . NB. DSInit() is done when g_hFrameWindow is created (WM_CREATE)
 
-  if (InitSDL()) {
+  if (InitSDL() != 0) {
     return 1;
   } // init SDL subsystems, set icon
 
   // CURL routines
   curl_global_init(CURL_GLOBAL_DEFAULT);
   g_curl = curl_easy_init();
-  if (!g_curl) {
+  if (g_curl == nullptr) {
     printf("Could not initialize CURL easy interface");
     return 1;
   }
@@ -1127,7 +1127,7 @@ int main(int argc, char *argv[])
 
   do {
     // Do initialization that must be repeated for a restart
-    restart = 0;
+    restart = false;
     g_nAppMode = MODE_LOGO;
     fullscreen = false;
 
@@ -1142,16 +1142,16 @@ int main(int argc, char *argv[])
     // This part of the code inserts disks if any were specified on the command line, overwriting the
     // configuration settings.
     int nError = 0;
-    if (szImageName_drive1) {
+    if (szImageName_drive1 != nullptr) {
       nError = DoDiskInsert(0, szImageName_drive1);
-      if (nError) {
+      if (nError != 0) {
         LOG("Cannot insert image %s into drive 1.", szImageName_drive1);
         break;
       }
     }
-    if (szImageName_drive2) {
+    if (szImageName_drive2 != nullptr) {
       nError |= DoDiskInsert(1, szImageName_drive2);
-      if (nError) {
+      if (nError != 0) {
         LOG("Cannot insert image %s into drive 2.", szImageName_drive2);
         break;
       }
@@ -1168,14 +1168,14 @@ int main(int argc, char *argv[])
     JoyInitialize();
     MemInitialize();
     HD_SetEnabled(hddenabled);
-    if (clockslot) {
+    if (clockslot != 0u) {
       Clock_Insert(clockslot);
     }
     VideoInitialize();
     DebugInitialize();
     Snapshot_Startup();    // Do this after everything has been init'ed
 
-    if (szSnapshotFile) {
+    if (szSnapshotFile != nullptr) {
       Snapshot_SetFilename(szSnapshotFile);
       LOG("[main ] using state file '%s'\n", Snapshot_GetFilename());
       Snapshot_LoadState();
@@ -1187,7 +1187,7 @@ int main(int argc, char *argv[])
     }
 
     JoyReset();
-    SetUsingCursor(0);
+    SetUsingCursor(false);
 
     // trying fullscreen
     if (!fullscreen) {

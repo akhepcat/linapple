@@ -133,11 +133,8 @@ inline	bool TextIsHexChar( char nChar )
 //===========================================================================
 inline	bool TextIsHexByte( char *pText )
 		{
-			if (TextIsHexChar( pText[0] ) &&
-				TextIsHexChar( pText[1] ))
-				return true;
-
-			return false;
+			return TextIsHexChar( pText[0] ) &&
+				TextIsHexChar( pText[1] );
 		}
 
 //===========================================================================

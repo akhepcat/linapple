@@ -178,7 +178,7 @@ LPBYTE Code62(int sector)
     LPBYTE sourceptr = workbuffer + 0x1000;
     LPBYTE resultptr = workbuffer + 0x1400;
     int loop = 342;
-    while (loop--) {
+    while ((loop--) != 0) {
       *(resultptr++) = savedval ^ *sourceptr;
       savedval = *(sourceptr++);
     }
@@ -194,7 +194,7 @@ LPBYTE Code62(int sector)
     LPBYTE sourceptr = workbuffer + 0x1400;
     LPBYTE resultptr = workbuffer + 0x1000;
     int loop = 343;
-    while (loop--) {
+    while ((loop--) != 0) {
       *(resultptr++) = diskbyte[(*(sourceptr++)) >> 2];
     }
   }
@@ -207,7 +207,7 @@ void Decode62(LPBYTE imageptr)
 
   // If we haven't already done so, generate a table for converting
   // disk bytes back into 6-bit bytes
-  static bool tablegenerated = 0;
+  static bool tablegenerated = false;
   static unsigned char sixbitbyte[0x80];
   if (!tablegenerated) {
     ZeroMemory(sixbitbyte, 0x80);
@@ -216,7 +216,7 @@ void Decode62(LPBYTE imageptr)
       sixbitbyte[diskbyte[loop] - 0x80] = loop << 2;
       loop++;
     }
-    tablegenerated = 1;
+    tablegenerated = true;
   }
 
   // Using our table, convert the disk bytes back into 6-bit bytes
@@ -224,7 +224,7 @@ void Decode62(LPBYTE imageptr)
     LPBYTE sourceptr = workbuffer + 0x1000;
     LPBYTE resultptr = workbuffer + 0x1400;
     int loop = 343;
-    while (loop--) {
+    while ((loop--) != 0) {
       *(resultptr++) = sixbitbyte[*(sourceptr++) & 0x7F];
     }
   }
@@ -236,7 +236,7 @@ void Decode62(LPBYTE imageptr)
     LPBYTE sourceptr = workbuffer + 0x1400;
     LPBYTE resultptr = workbuffer + 0x1000;
     int loop = 342;
-    while (loop--) {
+    while ((loop--) != 0) {
       *resultptr = savedval ^ *(sourceptr++);
       savedval = *(resultptr++);
     }
@@ -277,12 +277,12 @@ void DenibblizeTrack(LPBYTE trackimage, bool dosorder, int nibbles)
     int offset = 0;
     int partsleft = 33;
     int sector = 0;
-    while (partsleft--) {
+    while ((partsleft--) != 0) {
       unsigned char byteval[3] = {0, 0, 0};
       int bytenum = 0;
       int loop = nibbles;
-      while ((loop--) && (bytenum < 3)) {
-        if (bytenum) {
+      while (((loop--) != 0) && (bytenum < 3)) {
+        if (bytenum != 0) {
           byteval[bytenum++] = *(trackimage + offset++);
         } else if (*(trackimage + offset++) == 0xD5) {
           bytenum = 1;
@@ -291,7 +291,7 @@ void DenibblizeTrack(LPBYTE trackimage, bool dosorder, int nibbles)
           offset = 0;
         }
       }
-      if ((bytenum == 3) && (byteval[1] = 0xAA)) {
+      if ((bytenum == 3) && ((byteval[1] = 0xAA) != 0u)) {
         int loop = 0;
         int tempoffset = offset;
         while (loop < 384) {
@@ -398,20 +398,20 @@ bool AplBoot(imageinfoptr ptr) {
   ReadFile(ptr->file, &address, sizeof(unsigned short), &bytesRead, NULL);
   ReadFile(ptr->file, &length, sizeof(unsigned short), &bytesRead, NULL);
   if ((((unsigned short)(address + length)) <= address) || (address >= 0xC000) || (address + length - 1 >= 0xC000)) {
-    return 0;
+    return false;
   }
   ReadFile(ptr->file, mem + address, length, &bytesRead, NULL);
   int loop = 192;
-  while (loop--) {
+  while ((loop--) != 0) {
     *(memdirty + loop) = 0xFF;
   }
   regs.pc = address;
-  return 1;
+  return true;
 }
 
 unsigned int AplDetect(LPBYTE imageptr, unsigned int imagesize) {
   unsigned int length = *(LPWORD)(imageptr + 2);
-  return (((length + 4) == imagesize) || ((length + 4 + ((256 - ((length + 4) & 255)) & 255)) == imagesize));
+  return static_cast<unsigned int>(((length + 4) == imagesize) || ((length + 4 + ((256 - ((length + 4) & 255)) & 255)) == imagesize));
 }
 
 // DOS ORDER (DO) FORMAT IMPLEMENTATION
@@ -423,10 +423,10 @@ unsigned int DoDetect(LPBYTE imageptr, unsigned int imagesize) {
   // Check for a DOS order image of a DOS diskette
   {
     int loop = 0;
-    bool mismatch = 0;
+    bool mismatch = false;
     while ((loop++ < 15) && !mismatch) {
       if (*(imageptr + 0x11002 + (loop << 8)) != loop - 1) {
-        mismatch = 1;
+        mismatch = true;
       }
     }
     if (!mismatch) {
@@ -437,11 +437,11 @@ unsigned int DoDetect(LPBYTE imageptr, unsigned int imagesize) {
   // Check for a DOS order image of a PRODOS diskette
   {
     int loop = 1;
-    bool mismatch = 0;
+    bool mismatch = false;
     while ((loop++ < 5) && !mismatch) {
       if ((*(LPWORD)(imageptr + (loop << 9) + 0x100) != ((loop == 5) ? 0 : 6 - loop)) ||
           (*(LPWORD)(imageptr + (loop << 9) + 0x102) != ((loop == 2) ? 0 : 8 - loop))) {
-        mismatch = 1;
+        mismatch = true;
       }
     }
     if (!mismatch) {
@@ -456,7 +456,7 @@ void DoRead(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackImageBuff
   ZeroMemory(workbuffer, 4096);
   unsigned int bytesRead;
   ReadFile(ptr->file, workbuffer, 4096, &bytesRead, NULL);
-  *nibbles = NibblizeTrack(trackImageBuffer, 1, track);
+  *nibbles = NibblizeTrack(trackImageBuffer, true, track);
   if (!enhancedisk) {
     SkewTrack(track, *nibbles, trackImageBuffer);
   }
@@ -465,7 +465,7 @@ void DoRead(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackImageBuff
 void DoWrite(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackimage, int nibbles)
 {
   ZeroMemory(workbuffer, 4096);
-  DenibblizeTrack(trackimage, 1, nibbles);
+  DenibblizeTrack(trackimage, true, nibbles);
   SetFilePointer(ptr->file, ptr->offset + (track << 12), NULL, FILE_BEGIN);
   unsigned int bytesWritten;
   WriteFile(ptr->file, workbuffer, 4096, &bytesWritten, NULL);
@@ -475,10 +475,10 @@ void DoWrite(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackimage, i
 
 void IieConvertSectorOrder(LPBYTE sourceorder) {
   int loop = 16;
-  while (loop--) {
+  while ((loop--) != 0) {
     unsigned char found = 0xFF;
     int loop2 = 16;
-    while (loop2-- && (found == 0xFF)) {
+    while (((loop2--) != 0) && (found == 0xFF)) {
       if (*(sourceorder + loop2) == loop) {
         found = loop2;
       }
@@ -492,7 +492,7 @@ void IieConvertSectorOrder(LPBYTE sourceorder) {
 
 unsigned int IieDetect(LPBYTE imageptr, unsigned int imagesize)
 {
-  if (strncmp((const char *) imageptr, "SIMSYSTEM_IIE", 13) || (*(imageptr + 13) > 3)) {
+  if ((strncmp((const char *) imageptr, "SIMSYSTEM_IIE", 13) != 0) || (*(imageptr + 13) > 3)) {
     return 0;
   }
   return 2;
@@ -501,9 +501,9 @@ unsigned int IieDetect(LPBYTE imageptr, unsigned int imagesize)
 void IieRead(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackImageBuffer, int *nibbles)
 {
   // If we haven't already done so, read the image file header
-  if (!ptr->header) {
+  if (ptr->header == nullptr) {
     ptr->header = (LPBYTE) VirtualAlloc(NULL, 88, 0x1000, 0);
-    if (!ptr->header) {
+    if (ptr->header == nullptr) {
       *nibbles = 0;
       return;
     }
@@ -520,12 +520,12 @@ void IieRead(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackImageBuf
     ZeroMemory(workbuffer, 4096);
     unsigned int bytesRead;
     ReadFile(ptr->file, workbuffer, 4096, &bytesRead, NULL);
-    *nibbles = NibblizeTrack(trackImageBuffer, 2, track);
+    *nibbles = NibblizeTrack(trackImageBuffer, true, track);
   } else {
     // Otherwise, if this image contains nibble information, read it directly into the track buffer
     *nibbles = *(LPWORD)(ptr->header + (track << 1) + 14);
     unsigned int offset = 88;
-    while (track--) {
+    while ((track--) != 0) {
       offset += *(LPWORD)(ptr->header + (track << 1) + 14);
     }
     SetFilePointer(ptr->file, offset, NULL, FILE_BEGIN);
@@ -589,10 +589,10 @@ unsigned int PoDetect(LPBYTE imageptr, unsigned int imagesize) {
   // Check for a PRODOS order image of a dos diskette
   {
     int loop = 4;
-    bool mismatch = 0;
+    bool mismatch = false;
     while ((loop++ < 13) && !mismatch) {
       if (*(imageptr + 0x11002 + (loop << 8)) != 14 - loop) {
-        mismatch = 1;
+        mismatch = true;
       }
     }
     if (!mismatch) {
@@ -603,11 +603,11 @@ unsigned int PoDetect(LPBYTE imageptr, unsigned int imagesize) {
   // Check for a PRODOS order image of a prodos diskette
   {
     int loop = 1;
-    bool mismatch = 0;
+    bool mismatch = false;
     while ((loop++ < 5) && !mismatch) {
       if ((*(LPWORD)(imageptr + (loop << 9)) != ((loop == 2) ? 0 : loop - 1)) ||
           (*(LPWORD)(imageptr + (loop << 9) + 2) != ((loop == 5) ? 0 : loop + 1))) {
-        mismatch = 1;
+        mismatch = true;
       }
     }
     if (!mismatch) {
@@ -624,7 +624,7 @@ void PoRead(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackImageBuff
   ZeroMemory(workbuffer, 4096);
   unsigned int bytesRead;
   ReadFile(ptr->file, workbuffer, 4096, &bytesRead, NULL);
-  *nibbles = NibblizeTrack(trackImageBuffer, 0, track);
+  *nibbles = NibblizeTrack(trackImageBuffer, false, track);
   if (!enhancedisk) {
     SkewTrack(track, *nibbles, trackImageBuffer);
   }
@@ -633,7 +633,7 @@ void PoRead(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackImageBuff
 void PoWrite(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackimage, int nibbles)
 {
   ZeroMemory(workbuffer, 4096);
-  DenibblizeTrack(trackimage, 0, nibbles);
+  DenibblizeTrack(trackimage, false, nibbles);
   SetFilePointer(ptr->file, ptr->offset + (track << 12), NULL, FILE_BEGIN);
   unsigned int bytesWritten;
   WriteFile(ptr->file, workbuffer, 4096, &bytesWritten, NULL);
@@ -651,16 +651,16 @@ bool PrgBoot(imageinfoptr ptr)
   ReadFile(ptr->file, &length, sizeof(unsigned short), &bytesRead, NULL);
   length <<= 1;
   if ((((unsigned short)(address + length)) <= address) || (address >= 0xC000) || (address + length - 1 >= 0xC000)) {
-    return 0;
+    return false;
   }
   SetFilePointer(ptr->file, 128, NULL, FILE_BEGIN);
   ReadFile(ptr->file, mem + address, length, &bytesRead, NULL);
   int loop = 192;
-  while (loop--) {
+  while ((loop--) != 0) {
     *(memdirty + loop) = 0xFF;
   }
   regs.pc = address;
-  return 1;
+  return true;
 }
 
 unsigned int PrgDetect(LPBYTE imageptr, unsigned int imagesize)
@@ -690,9 +690,9 @@ static unsigned int woz2_scan_sync_bytes(const uint8_t* buffer,
 void Woz2Read(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackImageBuffer, int *nibbles)
 {
   unsigned int bytesRead;
-  if (!ptr->header) {
+  if (ptr->header == nullptr) {
     ptr->header = (LPBYTE) VirtualAlloc(NULL, WOZ2_HEADER_SIZE, 0x1000, 0);
-    if (!ptr->header) {
+    if (ptr->header == nullptr) {
       *nibbles = 0;
       return;
     }
@@ -733,7 +733,7 @@ void Woz2Read(imageinfoptr ptr, int track, int quartertrack, LPBYTE trackImageBu
 
   const unsigned int byte_count = block_count * WOZ2_DATA_BLOCK_SIZE;
   LPBYTE buffer = (LPBYTE) VirtualAlloc(NULL, byte_count, 0x1000, 0);
-  if (!buffer) {
+  if (buffer == nullptr) {
     *nibbles = 0;
     return;
   }
@@ -857,12 +857,12 @@ static unsigned int woz2_scan_sync_bytes(const uint8_t* buffer,
 
 bool ImageBoot(HIMAGE imageHandle) {
   imageinfoptr ptr = (imageinfoptr) imageHandle;
-  bool result = 0;
-  if (imagetype[ptr->format].boot) {
+  bool result = false;
+  if (imagetype[ptr->format].boot != nullptr) {
     result = imagetype[ptr->format].boot(ptr);
   }
   if (result) {
-    ptr->writeProtected = 1;
+    ptr->writeProtected = true;
   }
   return result;
 }
@@ -879,7 +879,7 @@ void ImageClose(HIMAGE imageHandle)
       break;
     }
   }
-  if (ptr->header) {
+  if (ptr->header != nullptr) {
     VirtualFree(ptr->header, 0,/*MEM_RELEASE*/0);
   }
   VirtualFree(ptr, 0,/*MEM_RELEASE*/0);
@@ -898,7 +898,7 @@ void ImageInitialize()
 
 int ImageOpen(LPCTSTR imagefilename, HIMAGE *hDiskImage_, bool *pWriteProtected_, bool bCreateIfNecessary)
 {
-  if (!(imagefilename && hDiskImage_ && pWriteProtected_ && workbuffer)) {
+  if (!((imagefilename != nullptr) && (hDiskImage_ != nullptr) && (!*pWriteProtected_) && (workbuffer != nullptr))) {
     return IMAGE_ERROR_BAD_POINTER;
   } // HACK: MAGIC # -1
 
@@ -912,7 +912,7 @@ int ImageOpen(LPCTSTR imagefilename, HIMAGE *hDiskImage_, bool *pWriteProtected_
     file = fopen(imagefilename, "rb"); // open file just for reading
 
     if (file != INVALID_HANDLE_VALUE)
-      *pWriteProtected_ = 1;
+      *pWriteProtected_ = true;
   }
 
   if ((file == INVALID_HANDLE_VALUE) && bCreateIfNecessary) {
@@ -958,9 +958,9 @@ int ImageOpen(LPCTSTR imagefilename, HIMAGE *hDiskImage_, bool *pWriteProtected_
     }
     pImage = view;
 
-    if (pImage) {
+    if (pImage != nullptr) {
       // Determine whether the file has a 128-byte macbinary header
-      if ((size > 128) && (!*pImage) && (*(pImage + 1) < 120) && (!*(pImage + *(pImage + 1) + 2)) &&
+      if ((size > 128) && (*pImage == 0u) && (*(pImage + 1) < 120) && (*(pImage + *(pImage + 1) + 2) == 0u) &&
           (*(pImage + 0x7A) == 0x81) && (*(pImage + 0x7B) == 0x81)) {
         pImage += 128;
         size -= 128;
@@ -970,7 +970,7 @@ int ImageOpen(LPCTSTR imagefilename, HIMAGE *hDiskImage_, bool *pWriteProtected_
       unsigned int possibleformat = UNKNOWN_FORMAT;
       int loop = 0;
       while ((loop < IMAGETYPES) && (format == UNKNOWN_FORMAT)) {
-        if (*ext && _tcsstr(imagetype[loop].rejectExts, ext)) {
+        if ((*ext != 0) && _tcsstr(imagetype[loop].rejectExts, ext)) {
           ++loop;
         } else {
           unsigned int result = imagetype[loop].detect(pImage, size);
@@ -992,7 +992,7 @@ int ImageOpen(LPCTSTR imagefilename, HIMAGE *hDiskImage_, bool *pWriteProtected_
   } else {
     // We create only DOS order (do) or 6656-nibble (nib) format files
     for (int loop = 1; loop <= 4; loop += 3) {
-      if (*ext && _tcsstr(imagetype[loop].createExts, ext)) {
+      if ((*ext != 0) && _tcsstr(imagetype[loop].createExts, ext)) {
         format = loop;
         break;
       }
@@ -1004,7 +1004,7 @@ int ImageOpen(LPCTSTR imagefilename, HIMAGE *hDiskImage_, bool *pWriteProtected_
   if (format != UNKNOWN_FORMAT) {
     // Create a record for the file, and return an image handle
     *hDiskImage_ = (HIMAGE) VirtualAlloc(NULL, sizeof(imageinforec), 0x1000, 0);
-    if (*hDiskImage_) {
+    if (*hDiskImage_ != nullptr) {
       ZeroMemory(*hDiskImage_, sizeof(imageinforec));
       // Do this in DiskInsert
 #pragma GCC diagnostic push
@@ -1034,7 +1034,7 @@ int ImageOpen(LPCTSTR imagefilename, HIMAGE *hDiskImage_, bool *pWriteProtected_
 
 void ImageReadTrack(HIMAGE imageHandle, int track, int quartertrack, LPBYTE trackImageBuffer, int *nibbles) {
   imageinfoptr ptr = (imageinfoptr) imageHandle;
-  if (imagetype[ptr->format].read && ptr->validTrack[track]) {
+  if ((imagetype[ptr->format].read != nullptr) && ptr->validTrack[track]) {
     imagetype[ptr->format].read(ptr, track, quartertrack, trackImageBuffer, nibbles);
   } else {
     for (*nibbles = 0; *nibbles < NIBBLES; (*nibbles)++) {
@@ -1045,8 +1045,8 @@ void ImageReadTrack(HIMAGE imageHandle, int track, int quartertrack, LPBYTE trac
 
 void ImageWriteTrack(HIMAGE imageHandle, int track, int quartertrack, LPBYTE trackimage, int nibbles) {
   imageinfoptr ptr = (imageinfoptr) imageHandle;
-  if (imagetype[ptr->format].write && !ptr->writeProtected) {
+  if ((imagetype[ptr->format].write != nullptr) && !ptr->writeProtected) {
     imagetype[ptr->format].write(ptr, track, quartertrack, trackimage, nibbles);
-    ptr->validTrack[track] = 1;
+    ptr->validTrack[track] = true;
   }
 }

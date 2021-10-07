@@ -42,7 +42,7 @@ char *Snapshot_GetFilename() {
 }
 
 void Snapshot_SetFilename(const char *pszFilename) {
-  if (*pszFilename)
+  if (*pszFilename != 0)
     _l_strcpy(g_szSaveStateFilename, (const char *) pszFilename);
   else
     _l_strcpy(g_szSaveStateFilename, DEFAULT_SNAPSHOT_NAME);

@@ -1186,15 +1186,15 @@ struct TokenTable_t {
   char sToken[4];
 };
 
+// Optimal fields order: nArgLen, eToken, bType, eDevice, nValue, bSymbol, sArg
 struct Arg_t {
-  char sArg[MAX_ARG_LEN]; // Array chars comes first, for alignment
   int nArgLen; // Needed for TextSearch "ABC\x00"
-  unsigned short nValue; // 2
-  // Enums and Bools should come last for alignment
   ArgToken_e eToken; // 1/2/4
   int bType; // 1/2/4 // Flags of ArgType_e
   DEVICE_e eDevice; // 1/2/4
+  unsigned short nValue; // 2
   bool bSymbol; // 1
+  char sArg[MAX_ARG_LEN]; // Array of chars
 };
 
 // NOTE: Order MUST match g_aParameters[] !!!

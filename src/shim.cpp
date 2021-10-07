@@ -52,7 +52,7 @@ static char *readSymLink(const char *path) {
   ssize_t len = 64;
   ssize_t rc = -1;
 
-  while (1) {
+  while (true) {
     char *ptr = (char *) SDL_realloc(retval, (size_t) len);
     if (ptr == NULL) {
       SDL_OutOfMemory();
@@ -124,7 +124,7 @@ char *SDL_GetBasePath(void)
   #endif
 
   /* is a Linux-style /proc filesystem available? */
-  if (!retval && (access("/proc", F_OK) == 0)) {
+  if ((retval == nullptr) && (access("/proc", F_OK) == 0)) {
     /* !!! FIXME: after 2.0.6 ships, let's delete this code and just
                   use the /proc/%llu version. There's no reason to have
                   two copies of this plus all the #ifdefs. --ryan. */
@@ -185,18 +185,18 @@ char *SDL_GetPrefPath(const char *org, const char *app)
   char *ptr = NULL;
   size_t len = 0;
 
-  if (!app) {
+  if (app == nullptr) {
     SDL_InvalidParamError("app");
     return NULL;
   }
-  if (!org) {
+  if (org == nullptr) {
     org = "";
   }
 
-  if (!envr) {
+  if (envr == nullptr) {
     /* You end up with "$HOME/.local/share/Game Name 2" */
     envr = SDL_getenv("HOME");
-    if (!envr) {
+    if (envr == nullptr) {
       /* we could take heroic measures with /etc/passwd, but oh well. */
       SDL_SetError("neither XDG_DATA_HOME nor HOME environment is set");
       return NULL;
@@ -213,18 +213,18 @@ char *SDL_GetPrefPath(const char *org, const char *app)
 
   len += SDL_strlen(append) + SDL_strlen(org) + SDL_strlen(app) + 3;
   retval = (char *) SDL_malloc(len);
-  if (!retval) {
+  if (retval == nullptr) {
     SDL_OutOfMemory();
     return NULL;
   }
 
-  if (*org) {
+  if (*org != 0) {
     SDL_snprintf(retval, len, "%s%s%s/%s/", envr, append, org, app);
   } else {
     SDL_snprintf(retval, len, "%s%s%s/", envr, append, app);
   }
 
-  for (ptr = retval + 1; *ptr; ptr++) {
+  for (ptr = retval + 1; *ptr != 0; ptr++) {
     if (*ptr == '/') {
       *ptr = '\0';
       if (mkdir(retval, 0700) != 0 && errno != EEXIST)

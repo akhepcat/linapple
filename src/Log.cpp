@@ -43,7 +43,7 @@ void LogInitialize() {
 }
 
 void LogOutput(LPCTSTR format, ...) {
-  if (!g_fh) {
+  if (g_fh == nullptr) {
     return;
   }
 
@@ -57,7 +57,7 @@ void LogOutput(LPCTSTR format, ...) {
 }
 
 void LogDestroy() {
-  if (g_fh) {
+  if (g_fh != nullptr) {
     fprintf(g_fh, "*** Logging ended\n\n");
     fclose(g_fh);
   }

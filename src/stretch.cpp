@@ -126,14 +126,14 @@ int SDL_SoftStretchMy(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL
   }
 
   /* Verify the blit rectangles */
-  if (!srcrect) {
+  if (srcrect == nullptr) {
     full_src.x = 0;
     full_src.y = 0;
     full_src.w = src->w;
     full_src.h = src->h;
     srcrect = &full_src;
   }
-  if (!dstrect) {
+  if (dstrect == nullptr) {
     full_dst.x = 0;
     full_dst.y = 0;
     full_dst.w = dst->w;
@@ -153,7 +153,7 @@ int SDL_SoftStretchMy(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL
   src_locked = 0;
   if (SDL_MUSTLOCK(src)) {
     if (SDL_LockSurface(src) < 0) {
-      if (dst_locked) {
+      if (dst_locked != 0) {
         SDL_UnlockSurface(dst);
       }
       return (-1);
@@ -194,10 +194,10 @@ int SDL_SoftStretchMy(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL
   }
 
   /* We need to unlock the surfaces if they're locked */
-  if (dst_locked) {
+  if (dst_locked != 0) {
     SDL_UnlockSurface(dst);
   }
-  if (src_locked) {
+  if (src_locked != 0) {
     SDL_UnlockSurface(src);
   }
   return (0);
@@ -219,7 +219,7 @@ void copy8mono(Uint8 *src, int src_w, Uint8 *dst, int dst_w, Uint8 fgbrush, Uint
       pixel = *src++;
       pos -= 0x10000L;
     }
-    if (pixel) {
+    if (pixel != 0u) {
       *dst++ = fgbrush;
     } else {
       *dst++ = bgbrush;
@@ -243,14 +243,14 @@ int SDL_SoftStretchMono8(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, 
   const int bpp = dst->format->BytesPerPixel;
 
   /* Verify the blit rectangles */
-  if (!srcrect) {
+  if (srcrect == nullptr) {
     full_src.x = 0;
     full_src.y = 0;
     full_src.w = src->w;
     full_src.h = src->h;
     srcrect = &full_src;
   }
-  if (!dstrect) {
+  if (dstrect == nullptr) {
     full_dst.x = 0;
     full_dst.y = 0;
     full_dst.w = dst->w;
@@ -270,7 +270,7 @@ int SDL_SoftStretchMono8(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, 
   src_locked = 0;
   if (SDL_MUSTLOCK(src)) {
     if (SDL_LockSurface(src) < 0) {
-      if (dst_locked) {
+      if (dst_locked != 0) {
         SDL_UnlockSurface(dst);
       }
       return (-1);
@@ -304,10 +304,10 @@ int SDL_SoftStretchMono8(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, 
   }
 
   /* We need to unlock the surfaces if they're locked */
-  if (dst_locked) {
+  if (dst_locked != 0) {
     SDL_UnlockSurface(dst);
   }
-  if (src_locked) {
+  if (src_locked != 0) {
     SDL_UnlockSurface(src);
   }
   return (0);
@@ -338,14 +338,14 @@ int SDL_SoftStretchOr(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL
   }
 
   /* Verify the blit rectangles */
-  if (!srcrect) {
+  if (srcrect == nullptr) {
     full_src.x = 0;
     full_src.y = 0;
     full_src.w = src->w;
     full_src.h = src->h;
     srcrect = &full_src;
   }
-  if (!dstrect) {
+  if (dstrect == nullptr) {
     full_dst.x = 0;
     full_dst.y = 0;
     full_dst.w = dst->w;
@@ -365,7 +365,7 @@ int SDL_SoftStretchOr(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL
   src_locked = 0;
   if (SDL_MUSTLOCK(src)) {
     if (SDL_LockSurface(src) < 0) {
-      if (dst_locked) {
+      if (dst_locked != 0) {
         SDL_UnlockSurface(dst);
       }
       return (-1);
@@ -406,10 +406,10 @@ int SDL_SoftStretchOr(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL
   }
 
   /* We need to unlock the surfaces if they're locked */
-  if (dst_locked) {
+  if (dst_locked != 0) {
     SDL_UnlockSurface(dst);
   }
-  if (src_locked) {
+  if (src_locked != 0) {
     SDL_UnlockSurface(src);
   }
   return (0);
