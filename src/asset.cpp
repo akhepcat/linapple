@@ -143,7 +143,7 @@ int Asset_FindMasterDisk(char *path_out)
   _l_strcpy(paths[0], ".");
   _l_strcpy(paths[1], "share/linapple"); // testing convenience
   _l_strcpy(paths[2], SDL_getenv("HOME"));
-  strcat(paths[2], "/.local/share/linapple");
+  _l_strcat(paths[2], "/.local/share/linapple");
   _l_strcpy(paths[3], "/usr/local/share/linapple");
   _l_strcpy(paths[4], "/usr/share/linapple");
 
