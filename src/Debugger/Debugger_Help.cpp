@@ -310,7 +310,7 @@ void _ColorizeHeader( char * & pDst, const char * & pSrc, const char * pHeader, 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstringop-truncation"
 	nLen = strlen( CHC_USAGE );
-	strcpy( pDst, CHC_USAGE );
+	_l_strcpy( pDst, CHC_USAGE );
 	pDst += nLen;
 
 	nLen = nHeaderLen - 1;
@@ -320,14 +320,14 @@ void _ColorizeHeader( char * & pDst, const char * & pSrc, const char * pHeader, 
 	pSrc += nHeaderLen;
 
 	nLen = strlen( CHC_ARG_SEP );
-	strcpy( pDst, CHC_ARG_SEP );
+	_l_strcpy( pDst, CHC_ARG_SEP );
 	pDst += nLen;
 
 	*pDst = ':';
 	pDst++;
 
 	nLen = strlen( CHC_DEFAULT );
-	strcpy( pDst, CHC_DEFAULT );
+	_l_strcpy( pDst, CHC_DEFAULT );
 	pDst += nLen;
 #pragma GCC diagnostic pop
 }
@@ -337,7 +337,7 @@ void _ColorizeString(
 	char * & pDst,
 	const char *pSrc, const size_t nLen )
 {
-	strcpy( pDst, pSrc );
+	_l_strcpy( pDst, pSrc );
 	pDst += nLen;
 }
 
@@ -350,14 +350,14 @@ void _ColorizeOperator(
 	int nLen;
 
 	nLen = strlen( pOperator );
-	strcpy( pDst, pOperator );
+	_l_strcpy( pDst, pOperator );
 	pDst += nLen;
 
 	*pDst = *pSrc;
 	pDst++;
 
 	nLen = strlen( CHC_DEFAULT );
-	strcpy( pDst, CHC_DEFAULT );
+	_l_strcpy( pDst, CHC_DEFAULT );
 	pDst += nLen;
 
 	pSrc++;
@@ -1573,7 +1573,7 @@ Update_t CmdHelpList (int nArgs)
 		{
 			ConsolePrint( sText );
 			nLen = 1;
-			strcpy( sText, " " );
+			_l_strcpy( sText, " " );
 			        StringCat( sText, CHC_COMMAND, nBuf );
 			nLen += StringCat( sText, pName, nBuf );
 		}

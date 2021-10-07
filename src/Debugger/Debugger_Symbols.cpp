@@ -305,7 +305,7 @@ Update_t CmdSymbolsInfo (int nArgs)
 
 	int bDisplaySymbolTables = 0;
 
-	strcpy( sText, sIndent ); // Indent new line
+	_l_strcpy( sText, sIndent ); // Indent new line
 
 	if (! nArgs)
 	{
@@ -340,7 +340,7 @@ Update_t CmdSymbolsInfo (int nArgs)
 			if((nDst + nLen) > CONSOLE_WIDTH )
 			{
 				ConsolePrint( sText );
-				strcpy( sText, sIndent ); // Indent new line
+				_l_strcpy( sText, sIndent ); // Indent new line
 			}
 			strcat( sText, sTemp );
 		}

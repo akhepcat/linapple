@@ -788,7 +788,7 @@ void DrawBreakpoints ( int line )
 			PrintTextCursorX( sText, rect2 );
 
 //			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPERATOR ) );
-//			strcpy( sText, "." );
+//			_l_strcpy( sText, "." );
 //			PrintTextCursorX( sText, rect2 );
 
 #if DEBUG_FORCE_DISPLAY
@@ -1278,11 +1278,11 @@ int GetDisassemblyLine ( unsigned short nBaseAddress, DisasmLine_t & line_ )
 	{
 		line_.iNoptype = pData->eElementType;
 		line_.iNopcode = pData->iDirective;
-		strcpy( line_.sMnemonic, g_aAssemblerDirectives[ line_.iNopcode ].m_pMnemonic );
+		_l_strcpy( line_.sMnemonic, g_aAssemblerDirectives[ line_.iNopcode ].m_pMnemonic );
 
 		FormatNopcodeBytes( nBaseAddress, line_ );
 	} else { // Regular 6502/65C02 opcode -> mnemonic
-		strcpy( line_.sMnemonic, g_aOpcodes[ line_.iOpcode ].sMnemonic );
+		_l_strcpy( line_.sMnemonic, g_aOpcodes[ line_.iOpcode ].sMnemonic );
 	}
 
 	int nSpaces = strlen( line_.sOpCodes );
@@ -1473,7 +1473,7 @@ void FormatDisassemblyLine( const DisasmLine_t & line, char * sDisassembly, cons
 	if (line.bTargetValue || line.bTargetRelative || line.bTargetImmediate)
 	{
 		if (line.bTargetRelative)
-			strcpy( sTarget, line.sTargetValue );
+			_l_strcpy( sTarget, line.sTargetValue );
 		else
 		if (line.bTargetImmediate)
 		{
@@ -2094,7 +2094,7 @@ void DrawFlags ( int line, unsigned short nRegFlags, LPTSTR pFlagNames_)
 	}
 
 	if (pFlagNames_)
-		strcpy(pFlagNames_,sFlagNames);
+		_l_strcpy(pFlagNames_,sFlagNames);
 }
 
 //===========================================================================
@@ -2803,7 +2803,7 @@ void DrawSourceLine( int iSourceLine, RECT &rect )
 	}
 	else
 	{
-		strcpy( sLine, " " );
+		_l_strcpy( sLine, " " );
 	}
 
 	PrintText( sLine, rect );

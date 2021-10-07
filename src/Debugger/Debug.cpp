@@ -630,7 +630,7 @@ Update_t CmdBookmarkLoad (int nArgs)
 {
   if (nArgs == 1)
   {
-//    strcpy( sMiniFileName, pFileName );
+//    _l_strcpy( sMiniFileName, pFileName );
   //  strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
 //    _tcscpy(sFileName, g_sCurrentDir); //
@@ -5388,7 +5388,7 @@ Update_t CmdNTSC (int nArgs)
       FILE *pFile = fopen( sPaletteFilePath.c_str(), "rb" );
       if( pFile )
       {
-        strcpy( aStatusText, "Loaded" );
+        _l_strcpy( aStatusText, "Loaded" );
 
         // Get File Size
         size_t  nFileSize  = _GetFileSize( pFile );
@@ -5403,13 +5403,13 @@ Update_t CmdNTSC (int nArgs)
 
           if (pBmp->nBitsPerPixel != 32)
           {
-            strcpy( aStatusText, "Bitmap not 32-bit RGBA" );
+            _l_strcpy( aStatusText, "Bitmap not 32-bit RGBA" );
             goto _error;
           }
 
           if (pBmp->nOffsetData > nFileSize)
           {
-            strcpy( aStatusText, "Bad BITMAP: Data > file size !?" );
+            _l_strcpy( aStatusText, "Bad BITMAP: Data > file size !?" );
             goto _error;
           }
 
@@ -5419,7 +5419,7 @@ Update_t CmdNTSC (int nArgs)
           || ((pBmp->nWidthPixels  == 16 ) && (pBmp->nHeightPixels == 1))
           ))
           {
-            strcpy( aStatusText, "Bitmap not 64x256, 64x1, or 16x1" );
+            _l_strcpy( aStatusText, "Bitmap not 64x256, 64x1, or 16x1" );
             goto _error;
           }
 
@@ -5487,7 +5487,7 @@ _error:
       }
       else
       {
-        strcpy( aStatusText, "File: " );
+        _l_strcpy( aStatusText, "File: " );
         ConsoleBufferPush( TEXT( "Error couldn't open file for reading." ) );
       }
 
@@ -7670,7 +7670,7 @@ int FindCommand( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
     return nFound;
 
   char sCommand[ CONSOLE_WIDTH ];
-  strcpy( sCommand, pName );
+  _l_strcpy( sCommand, pName );
   _strupr( sCommand );
 
   while ((iCommand < NUM_COMMANDS_WITH_ALIASES)) // && (name[0] >= g_aCommands[iCommand].aName[0])) Command no longer in Alphabetical order
@@ -7833,7 +7833,7 @@ Update_t ExecuteCommand (int nArgs)
           // replace: addrL
           // with:    comamnd addr
           pArg[1] = pArg[0];
-          strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
+          _l_strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
           pArg->nArgLen = strlen( pArg->sArg );
 
           pArg++;
@@ -7852,7 +7852,7 @@ Update_t ExecuteCommand (int nArgs)
           // with:    command addr
           pArg[1] = pArg[0];
 
-          strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
+          _l_strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
           pArg->nArgLen = strlen( pArg->sArg );
 
 //          nCookMask &= ~ (1 << TOKEN_COLON);
@@ -7913,11 +7913,11 @@ Update_t ExecuteCommand (int nArgs)
               g_iCommand = CMD_MEMORY_MOVE;
               pFunction = g_aCommands[ g_iCommand ].pFunction;
 
-              strcpy( pArg[4].sArg, pEnd );
-              strcpy( pArg[3].sArg, g_aTokens[ TOKEN_COLON ].sToken );
-              strcpy( pArg[2].sArg, pSrc );
-              strcpy( pArg[1].sArg, pDst );
-              strcpy( pArg[0].sArg, g_aCommands[ g_iCommand ].m_sName );
+              _l_strcpy( pArg[4].sArg, pEnd );
+              _l_strcpy( pArg[3].sArg, g_aTokens[ TOKEN_COLON ].sToken );
+              _l_strcpy( pArg[2].sArg, pSrc );
+              _l_strcpy( pArg[1].sArg, pDst );
+              _l_strcpy( pArg[0].sArg, g_aCommands[ g_iCommand ].m_sName );
               // pDst moved from arg0 to arg1 !
               pArg[1].bType = TYPE_VALUE;
               pArg[2].bType = TYPE_VALUE;
@@ -8240,7 +8240,7 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
     else // not qouted if dumping to console
     {
       sprintf( sOpcode, "%02X", nOpcode );
-      strcpy( sAddress, g_aOpmodes[ nOpmode ].m_sName );
+      _l_strcpy( sAddress, g_aOpmodes[ nOpmode ].m_sName );
     }
 
     // BUG: Yeah 100% is off by 1 char. Profiling only one opcode isn't worth fixing this visual alignment bug.
@@ -8315,7 +8315,7 @@ void ProfileFormat( bool bExport, ProfileFormat_e eFormatMode )
     }
     else // not qouted if dumping to console
     {
-      strcpy( sAddress, g_aOpmodes[ nOpmode ].m_sName );
+      _l_strcpy( sAddress, g_aOpmodes[ nOpmode ].m_sName );
     }
 
     // BUG: Yeah 100% is off by 1 char. Profiling only one opcode isn't worth fixing this visual alignment bug.

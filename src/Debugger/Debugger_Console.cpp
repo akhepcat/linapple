@@ -434,7 +434,7 @@ void ConsoleDisplayPause ()
 		);
 		g_nConsolePromptLen = ConsoleLineLength( g_pConsoleInput ) + 1;
 #else
-		strcpy(
+		_l_strcpy(
 			g_aConsoleInput,
 			"...press SPACE continue, ESC skip..."
 		);
