@@ -140,6 +140,9 @@ $(BUILDDIR)/%.$(XPMEXT): $(RESDIR)/%.$(IMGEXT)
 $(TARGETDIR)/%.$(SYMEXT): $(RESDIR)/%.$(SYMEXT)
 	cp $< $@
 
+ctidy:
+	clang-tidy $(SRCDIR)/*.$(SRCEXT) -- $(CFLAGS) $(INC) 2>&1 | tee clang-tidy.log
+
 install: all
 	install -D --target-directory "$(DESTDIR)/$(BINDIR)" build/$(BINDIR)/$(TARGET)
 	install -D --target-directory "$(DESTDIR)/$(DATADIR)" build/$(DATADIR)/Master.dsk
