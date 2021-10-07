@@ -140,8 +140,8 @@ $(BUILDDIR)/%.$(XPMEXT): $(RESDIR)/%.$(IMGEXT)
 $(TARGETDIR)/%.$(SYMEXT): $(RESDIR)/%.$(SYMEXT)
 	cp $< $@
 
-ctidy:
-	clang-tidy $(SRCDIR)/*.$(SRCEXT) -- $(CFLAGS) $(INC) 2>&1 | tee clang-tidy.log
+ctidy: resources
+	clang-tidy $(SRCDIR)/*.$(SRCEXT) $(SRCDIR)/Debugger/*.$(SRCEXT) -- $(CFLAGS) $(INC) 2>&1 | tee clang-tidy.log
 
 install: all
 	install -D --target-directory "$(DESTDIR)/$(BINDIR)" build/$(BINDIR)/$(TARGET)
