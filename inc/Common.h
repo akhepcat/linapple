@@ -158,11 +158,21 @@ enum eBUTTONSTATE {
 
 // This should be defined for Windows systems maybe?
 // or we can just always use internal version...
-#if(! HAS_STRLCPY)
+#if( (!HAS_STRLCPY) || (!HAS_STRLCAT) )
 #include <cstring>
-extern std::size_t __l_strlcpy(char *, const char *, size_t);
-# define _l_strcpy(d,s)__l_strlcpy((d),(s),strlen((s)))
+#endif
 
+#if(!HAS_STRLCPY)
+extern std::size_t __l_strlcpy(char *, const char *, size_t);
+# define _l_strcpy(d,s) __l_strlcpy((d),(s),strlen((s)))
 #else
 # define _l_strcpy(d,s) strlcpy((d),(s),strlen((s)))
+#endif
+
+#if(! HAS_STRLCAT)
+extern std::size_t __l_strlcat(char *, const char *, size_t);
+# define _l_strcat(d,s) __l_strlcat((d),(s),sizeof((d)))
+
+#else
+# define _l_strcat(d,s) strlcat((d),(s),sizeof((d)))
 #endif
